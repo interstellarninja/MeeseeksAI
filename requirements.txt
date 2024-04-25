@@ -1,0 +1,11 @@
+openai
+requests
+beautifulsoup4
+python-dateutil
+spacy
+textblob
+tiktoken
+pickle5
+gpt4all
+PyPDF2
+hashlib
