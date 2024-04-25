@@ -1,1 +1,1 @@
-A framework for orechestrating AI agents using a mermaid graph
+A framework for orchestrating AI agents using a mermaid graph
