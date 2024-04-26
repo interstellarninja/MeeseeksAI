@@ -1,6 +1,6 @@
 from typing import Callable, List, Optional
-import agents
-from agents import Agent
+from src import agents
+from src.agents import Agent
 import uuid
 from datetime import datetime
 # Task class for defining the tasks, expected output, agents, async execution, context, output file, callback, human input, tool name, input tasks, and output tasks
