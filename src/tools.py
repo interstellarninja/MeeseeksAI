@@ -1,54 +1,21 @@
 import hashlib
 import os
+import PyPDF2
 import requests
 from bs4 import BeautifulSoup
 import spacy
 from textblob import TextBlob
-from tiktoken import get_encoding
 import pickle
 from gpt4all import Embed4All
 from typing import Any, Callable, Dict, List, Optional
 
-class TextChunker:
-    def __init__(self, text: str = None, chunk_size: int = 1000, overlap: int = 0):
-        self.text = text
-        self.chunk_size = chunk_size
-        self.overlap = overlap
-        self.encoding = get_encoding("cl100k_base")
-
-    def chunk_text(self, text: str = None, chunk_size: int = None, start_pos: int = 0) -> List[Dict[str, Any]]:
-        if text is not None:
-            self.text = text
-        if chunk_size is not None:
-            self.chunk_size = chunk_size
-
-        tokens = self.encoding.encode(self.text)
-        num_tokens = len(tokens)
-
-        chunks = []
-        current_pos = start_pos
-
-        while current_pos < num_tokens:
-            chunk_start = max(0, current_pos - self.overlap)
-            chunk_end = min(current_pos + self.chunk_size, num_tokens)
-
-            chunk_tokens = tokens[chunk_start:chunk_end]
-            chunk_text = self.encoding.decode(chunk_tokens)
-
-            chunks.append({
-                "text": chunk_text,
-                "start": chunk_start,
-                "end": chunk_end
-            })
-
-            current_pos += self.chunk_size - self.overlap
-
-        return chunks
+from src.resources import Resources, TextChunker
 
 # Tools for reading text, scraping web content, extracting named entities, and performing sentiment analysis
 
 class WikipediaSearchTool:
-    def __init__(self, chunk_size: int = 1000, num_chunks: int = 10):
+    def __init__(self, resource: Resources, chunk_size: int = 1000, num_chunks: int = 10):
+        self.resource = resource
         self.chunk_size = chunk_size
         self.num_chunks = num_chunks
         self.chunker = TextChunker()
@@ -75,7 +42,8 @@ class WikipediaSearchTool:
 # Takes a list of file paths, embeds the text in the files, and allows semantic search based on a query
 
 class SemanticFileSearchTool:
-    def __init__(self, file_paths: List[str], embed_model: str, embed_dim: int = 768, chunk_size: int = 1000, top_k: int = 3):
+    def __init__(self, resource: Resources, file_paths: List[str], embed_model: str, embed_dim: int = 768, chunk_size: int = 1000, top_k: int = 3):
+        self.resource = resource
         self.embedder = Embed4All(embed_model)
         self.embed_dim = embed_dim
         self.chunk_size = chunk_size
@@ -153,7 +121,8 @@ class SemanticFileSearchTool:
 # Simple tool to read text from a file and chunk it into smaller pieces
 
 class TextReaderTool:
-    def __init__(self, text_file: str, chunk_size: int, num_chunks: int):
+    def __init__(self, resource: Resources, text_file: str, chunk_size: int, num_chunks: int):
+        self.resource = resource
         self.text_file = text_file
         self.chunk_size = chunk_size
         self.num_chunks = num_chunks
@@ -168,7 +137,8 @@ class TextReaderTool:
 # Tool to scrape text from a web page and chunk it into smaller pieces
 
 class WebScraperTool:
-    def __init__(self, url: str, chunk_size: int, num_chunks: int):
+    def __init__(self, resource: Resources, url: str, chunk_size: int, num_chunks: int):
+        self.resource = resource
         self.url = url
         self.chunk_size = chunk_size
         self.num_chunks = num_chunks
@@ -187,7 +157,8 @@ class WebScraperTool:
 # Tool to extract named entities from text using spaCy
 
 class NERExtractionTool:
-    def __init__(self, text: str = None):
+    def __init__(self, resource: Resources, text: str = None):
+        self.resource = resource
         self.text = text
         self.nlp = spacy.load("en_core_web_sm")
 
@@ -210,7 +181,8 @@ class NERExtractionTool:
 # Tool to perform sentiment analysis using TextBlob
 
 class SemanticAnalysisTool:
-    def __init__(self, text: str = None):
+    def __init__(self, resource: Resources, text: str = None):
+        self.resource = resource
         self.text = text
 
     def analyze_sentiment(self, text: Optional[str] = None) -> Dict[str, Any]:
