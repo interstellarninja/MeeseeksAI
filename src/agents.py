@@ -1,4 +1,4 @@
-from tools import TextReaderTool, WebScraperTool, SemanticAnalysisTool, NERExtractionTool, SemanticFileSearchTool, WikipediaSearchTool
+from src.tools import TextReaderTool, WebScraperTool, SemanticAnalysisTool, NERExtractionTool, SemanticFileSearchTool, WikipediaSearchTool
 from openai import OpenAI
 import uuid
 from datetime import datetime
@@ -163,6 +163,6 @@ entity_extractor = Agent(
 mermaid = Agent(
     role='Mermaid',
     goal='Generate an accurate representation of the information as a graph.',
-    model="madrienbrault/nous-hermes2pro:Q4_0",
+    model="adrienbrault/nous-hermes2pro:Q4_0",
     verbose=True
 )
