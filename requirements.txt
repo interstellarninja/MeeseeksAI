@@ -1,6 +1,6 @@
 openai
 requests
-beautifulsoup4
+bs4
 python-dateutil
 spacy
 textblob
