@@ -1,48 +1,36 @@
+from pydantic import BaseModel, Field
+from typing import Any, Dict, List, Optional, Callable
 from src.tools import TextReaderTool, WebScraperTool, SemanticAnalysisTool, NERExtractionTool, SemanticFileSearchTool, WikipediaSearchTool
 from openai import OpenAI
 import uuid
 from datetime import datetime
 
-class Agent:
-    def __init__(
-        self,
-        role: str,
-        goal: str,
-        tools: dict = {},
-        verbose: bool = False,
-        model: str = "adrienbrault/nous-hermes2pro:Q4_0", #default agent model
-        max_iter: int = 25,
-        max_rpm: int = None,
-        max_execution_time: int = None,
-        cache: bool = True,
-        step_callback: callable = None,
-        persona: str = None,
-        allow_delegation: bool = False,
-        input_tasks: list = None,
-        output_tasks: list = None,
-    ):
-        self.id = str(uuid.uuid4())
-        self.role = role
-        self.goal = goal
-        self.tools = tools
-        self.verbose = verbose
-        self.model = model
-        self.max_iter = max_iter
-        self.max_rpm = max_rpm
-        self.max_execution_time = max_execution_time
-        self.cache = cache
-        self.step_callback = step_callback
-        self.persona = persona
-        self.allow_delegation = allow_delegation
-        self.input_tasks = input_tasks or []
-        self.output_tasks = output_tasks or []
-        self.interactions = []  # To log prompts and responses
-        self.client = OpenAI(
-            base_url='http://localhost:11434/v1',
-            api_key='ollama',
-        )
+class Agent(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True  # Allow arbitrary types
 
-    def execute_task(self, task, context: str = None) -> str:
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    role: str
+    goal: str
+    tools: Dict[str, Any] = {}
+    verbose: bool = False
+    model: str = "adrienbrault/nous-hermes2pro:Q4_0"  # default agent model
+    max_iter: int = 25
+    max_rpm: Optional[int] = None
+    max_execution_time: Optional[int] = None
+    cache: bool = True
+    step_callback: Optional[Callable] = None
+    persona: Optional[str] = None
+    allow_delegation: bool = False
+    input_tasks: List = []
+    output_tasks: List = []
+    interactions: List[Dict] = []
+    client: OpenAI = Field(default_factory=lambda: OpenAI(
+        base_url='http://localhost:11434/v1',
+        api_key='ollama',
+    ))
+
+    def execute_task(self, task, context: Optional[str] = None) -> str:
         messages = []
         if self.persona and self.verbose:
             messages.append({"role": "system", "content": f"Background: {self.persona}"})
@@ -61,17 +49,11 @@ class Agent:
                 sentiment_result = tool.analyze_sentiment()
                 messages.append({"role": "system", "content": f"Sentiment Analysis Result: {sentiment_result}"})
             elif isinstance(tool, NERExtractionTool):
-                # Assume 'context' contains the necessary text to analyze
                 entities = tool.extract_entities(context)
                 messages.append({"role": "system", "content": f"Extracted Entities: {entities}"})
             elif isinstance(tool, SemanticFileSearchTool):
-                # Construct the query by joining the outputs from the context tasks
                 query = "\n".join([c.output for c in task.context if c.output])
-                
-                # Perform the semantic search and get the relevant file chunks
                 relevant_chunks = tool.search(query)
-                
-                # Add the relevant file chunks to the messages
                 for chunk in relevant_chunks:
                     chunk_text = f"File: {chunk['file']}\nText: {chunk['text']}\nScore: {chunk['score']:.3f}"
                     messages.append({"role": "system", "content": chunk_text})
@@ -82,8 +64,6 @@ class Agent:
         )
 
         result = response.choices[0].message.content
-
-        # Log the interaction
         self.log_interaction(messages, result)
 
         if self.step_callback:

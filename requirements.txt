@@ -2,10 +2,10 @@ openai
 requests
 bs4
 python-dateutil
-spacy
-textblob
 tiktoken
-pickle5
-gpt4all
 PyPDF2
+textblob
+gpt4all
+spacy
+pickle5
 hashlib

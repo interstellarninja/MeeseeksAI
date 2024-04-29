@@ -135,7 +135,7 @@ class Squad:
 def mainflow():
     text_resource = Resources('text', "inputs/press_release.txt", "Here are your thoughts on the statement '{chunk}' from the file '{file}' (start: {start}, end: {end}): ")
     pdf_resource = Resources('pdf', "inputs/sec_filings_10k.pdf", "The following excerpt is from the PDF '{file}' (start: {start}, end: {end}):\n{chunk}")
-    web_resource = Resources('web', "https://investor.nvidia.com/news/press-release-details/2023/NVIDIA-Announces-Financial-Results-for-First-Quarter-Fiscal-2024/default.aspx", "The following content is scraped from the web page '{file}':\n{chunk}")
+    web_resource = Resources('web', "https://blogs.nvidia.com/", "The following content is scraped from the web page '{file}':\n{chunk}")
     #system_docs_resource = Resources('text', "inputs/system_documentation.txt", "The following is a snippet from the system documentation '{file}' (start: {start}, end: {end}):\n{chunk}")
     #define toolsettings for flow sesh
 
