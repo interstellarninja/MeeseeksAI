@@ -26,6 +26,7 @@ class Agent(BaseModel):
     role: str
     goal: str
     tools: List[str] = []
+    dependencies: Optional[List[str]] = None
     verbose: bool = False 
     model: str = "adrienbrault/nous-hermes2pro:Q4_0"  # default agent model
     max_iter: int = 25
