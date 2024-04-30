@@ -5,15 +5,28 @@ from openai import OpenAI
 import uuid
 from datetime import datetime
 
+CLIENTS = {
+    "ollama": OpenAI(
+        base_url='http://localhost:11434/v1',
+        api_key='ollama',
+    ),
+    "openai": OpenAI(
+        base_url='http://localhost:11434/v1',
+        api_key='openai',
+    ),
+    # Add more client definitions as needed
+}
+
 class Agent(BaseModel):
     class Config:
         arbitrary_types_allowed = True  # Allow arbitrary types
+        exclude = {"client", "tools"}
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     role: str
     goal: str
-    tools: Dict[str, Any] = {}
-    verbose: bool = False
+    tools: List[str] = []
+    verbose: bool = False 
     model: str = "adrienbrault/nous-hermes2pro:Q4_0"  # default agent model
     max_iter: int = 25
     max_rpm: Optional[int] = None
@@ -25,10 +38,15 @@ class Agent(BaseModel):
     input_tasks: List = []
     output_tasks: List = []
     interactions: List[Dict] = []
-    client: OpenAI = Field(default_factory=lambda: OpenAI(
-        base_url='http://localhost:11434/v1',
-        api_key='ollama',
-    ))
+    client: str = "ollama"
+
+    def __init__(self, **data: Any):
+            super().__init__(**data)
+            if not self.client:
+                raise ValueError("Client must be specified.")
+            self.client = CLIENTS.get(self.client)
+            if not self.client:
+                raise ValueError("Invalid client specified.")
 
     def execute_task(self, task, context: Optional[str] = None) -> str:
         messages = []
@@ -78,71 +96,3 @@ class Agent(BaseModel):
             "timestamp": datetime.now().isoformat()
         })
 
-# Define the agents
-researcher = Agent(
-    role='Researcher',
-    goal='Analyze the provided text and extract relevant information.',
-    persona="""You are a renowned Content Strategist, known for your insightful and engaging articles. You transform complex concepts into compelling narratives.""",
-    tools={"text_reader": TextReaderTool},
-    verbose=True
-)
-
-wikipedia_expert = Agent(
-    role='Wikipedia Expert',
-    goal='Provide contextual information from Wikipedia articles relevant to a given topic.',
-    persona='You are an expert in searching and summarizing information from Wikipedia on various topics.',
-    tools={'wikipedia_search': WikipediaSearchTool},
-    verbose=True
-)
-
-web_analyzer = Agent(
-    role='Web Analyzer',
-    goal='Analyze the scraped web content and provide a summary.',
-    tools={"web_scraper": WebScraperTool},
-    verbose=True
-)
-
-sentimentalizer = Agent(
-    role='Sentimentalizer',
-    goal='Analyze the sentiment of the extracted information.',
-    tools={"sentiment_analysis": SemanticAnalysisTool},
-    verbose=True
-)
-
-planner = Agent(
-    role="Planner",
-    goal="Develop comprehensive plans and strategies for efficient systems management.",
-    persona="You are an experienced Systems Manager with a proven track record in developing and implementing effective plans and strategies to optimize system performance, ensure reliability, and improve operational efficiency.",
-    tools={"system_docs": TextReaderTool},
-    verbose=True
-)
-
-semantic_searcher = Agent(
-    role='Semantic Searcher',
-    goal='Perform semantic searches on a corpus of files to find relevant information.',
-    persona='You are an expert in semantic search and information retrieval.',
-    tools={'semantic_search': SemanticFileSearchTool},
-    verbose=True
-)
-
-summarizer = Agent(
-    role='Summarizer',
-    persona="""You are a skilled Data Analyst with a knack for distilling complex information into concise summaries.""",
-    goal='Compile a summary report based on the extracted information.',
-    verbose=True
-)
-
-entity_extractor = Agent(
-    role='Entity Extractor',
-    goal='Extract named entities from the given text.',
-    tools={"ner_extraction": NERExtractionTool},
-    model="llama3",
-    verbose=True
-)
-
-mermaid = Agent(
-    role='Mermaid',
-    goal='Generate an accurate representation of the information as a graph.',
-    model="adrienbrault/nous-hermes2pro:Q4_0",
-    verbose=True
-)
