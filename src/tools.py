@@ -9,12 +9,12 @@ import pickle
 from gpt4all import Embed4All
 from typing import Any, Callable, Dict, List, Optional
 
-from src.resources import Resources, TextChunker
+from src.resources import Resource, TextChunker
 
 # Tools for reading text, scraping web content, extracting named entities, and performing sentiment analysis
 
 class WikipediaSearchTool:
-    def __init__(self, resource: Resources, chunk_size: int = 1000, num_chunks: int = 10):
+    def __init__(self, resource: Resource, chunk_size: int = 1000, num_chunks: int = 10):
         self.resource = resource
         self.chunk_size = chunk_size
         self.num_chunks = num_chunks
@@ -42,7 +42,7 @@ class WikipediaSearchTool:
 # Takes a list of file paths, embeds the text in the files, and allows semantic search based on a query
 
 class SemanticFileSearchTool:
-    def __init__(self, resource: Resources, file_paths: List[str], embed_model: str, embed_dim: int = 768, chunk_size: int = 1000, top_k: int = 3):
+    def __init__(self, resource: Resource, file_paths: List[str], embed_model: str, embed_dim: int = 768, chunk_size: int = 1000, top_k: int = 3):
         self.resource = resource
         self.embedder = Embed4All(embed_model)
         self.embed_dim = embed_dim
@@ -121,7 +121,7 @@ class SemanticFileSearchTool:
 # Simple tool to read text from a file and chunk it into smaller pieces
 
 class TextReaderTool:
-    def __init__(self, resource: Resources, text_file: str, chunk_size: int, num_chunks: int):
+    def __init__(self, resource: Resource, text_file: str, chunk_size: int, num_chunks: int):
         self.resource = resource
         self.text_file = text_file
         self.chunk_size = chunk_size
@@ -137,7 +137,7 @@ class TextReaderTool:
 # Tool to scrape text from a web page and chunk it into smaller pieces
 
 class WebScraperTool:
-    def __init__(self, resource: Resources, url: str, chunk_size: int, num_chunks: int):
+    def __init__(self, resource: Resource, url: str, chunk_size: int, num_chunks: int):
         self.resource = resource
         self.url = url
         self.chunk_size = chunk_size
@@ -157,7 +157,7 @@ class WebScraperTool:
 # Tool to extract named entities from text using spaCy
 
 class NERExtractionTool:
-    def __init__(self, resource: Resources, text: str = None):
+    def __init__(self, resource: Resource, text: str = None):
         self.resource = resource
         self.text = text
         self.nlp = spacy.load("en_core_web_sm")
@@ -181,7 +181,7 @@ class NERExtractionTool:
 # Tool to perform sentiment analysis using TextBlob
 
 class SemanticAnalysisTool:
-    def __init__(self, resource: Resources, text: str = None):
+    def __init__(self, resource: Resource, text: str = None):
         self.resource = resource
         self.text = text
 
