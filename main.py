@@ -12,12 +12,10 @@ from bs4 import BeautifulSoup
 import PyPDF2
 import os
 import hashlib
-from src.resources import Resources
+from src.resources import Resource
 
 from src.tools import TextReaderTool, WebScraperTool, SemanticAnalysisTool, NERExtractionTool, SemanticFileSearchTool, WikipediaSearchTool
-from src import agents
 from src.agents import Agent
-from src import tasks
 from src.tasks import Task
 
 class Squad:
@@ -133,9 +131,18 @@ class Squad:
 
 
 def mainflow():
-    text_resource = Resources('text', "inputs/press_release.txt", "Here are your thoughts on the statement '{chunk}' from the file '{file}' (start: {start}, end: {end}): ")
-    pdf_resource = Resources('pdf', "inputs/sec_filings_10k.pdf", "The following excerpt is from the PDF '{file}' (start: {start}, end: {end}):\n{chunk}")
-    web_resource = Resources('web', "https://blogs.nvidia.com/", "The following content is scraped from the web page '{file}':\n{chunk}")
+    file_path = os.path.join(os.getcwd())
+    with open(os.path.join(file_path, "configs/agents.json"), "r") as file:
+        agents = json.load(file)
+    agents = [Agent(**agent) for agent in agents]
+
+    with open(os.path.join(file_path, "configs/tasks.json"), "r") as file:
+        tasks = json.load(file)
+    tasks = [Task(**task) for task in tasks]
+
+    with open(os.path.join(file_path, "configs/resources.json"), "r") as file:
+        resources = json.load(file)
+    resources = [Resource(**resource) for resource in resources]
     #system_docs_resource = Resources('text', "inputs/system_documentation.txt", "The following is a snippet from the system documentation '{file}' (start: {start}, end: {end}):\n{chunk}")
     #define toolsettings for flow sesh
 
@@ -152,9 +159,9 @@ def mainflow():
     
     # TODO we need to restrcuture agents such that tasks and tools are filled by the LLM as part of agent metadata
     squad = Squad(
-        agents=[agents.researcher, agents.web_analyzer, agents.planner, agents.summarizer, agents.semantic_searcher, agents.sentimentalizer, agents.entity_extractor, agents.mermaid],
-        tasks=[tasks.txt_task, tasks.web_task, tasks.system_plan, tasks.summary, tasks.search_task, tasks.vibes, tasks.ner_task, tasks.mermaidGRAPH],
-        resources=[text_resource, pdf_resource, web_resource],
+        agents=agents,
+        tasks=tasks,
+        resources=resources,
         verbose=True,
         log_file="squad_goals" + datetime.now().strftime("%Y%m%d%H%M%S") + ".json"
     )
