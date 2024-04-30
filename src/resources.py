@@ -1,16 +1,20 @@
 import PyPDF2
 import requests
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from tiktoken import get_encoding
 
-class Resources:
-    def __init__(self, resource_type: str, resource_path: str, context_template: str = None):
-        self.resource_type = resource_type
-        self.resource_path = resource_path
-        self.context_template = context_template
-        self.data = self.load_resource()
-        self.chunks = []
+from pydantic import BaseModel
+import PyPDF2
+import requests
+from typing import Dict, Any, List
+
+class Resource(BaseModel):
+    type: str
+    path: str
+    context_template: Optional[str] = None
+    data: Optional[str] = None
+    chunks: Optional[List[Dict[str, Any]]] = []
 
     def load_resource(self):
         if self.resource_type == 'text':
