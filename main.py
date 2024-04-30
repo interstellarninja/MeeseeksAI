@@ -1,26 +1,17 @@
-import argparse
+import os
 import json
 import uuid
-from typing import Any, Callable, Dict, List, Optional
+import argparse
+from typing import Any, Dict, List, Optional
 from openai import OpenAI
-import requests
-from bs4 import BeautifulSoup
 from datetime import datetime
-from tiktoken import get_encoding
-import pickle
-import requests
-from bs4 import BeautifulSoup
-import PyPDF2
-import os
-import hashlib
-import sys
-import inspect
 
 from src.prompter import PromptManager
 from src.tools import *
 from src.resources import Resource
 from src.agents import Agent
 from src.tasks import Task
+from src.utils import get_tool_names
 
 class Squad:
     def __init__(self, agents: List['Agent'], tasks: List['Task'], resources: List['Resource'], verbose: bool = False, log_file: str = "squad_log.json"):
@@ -132,15 +123,6 @@ class Squad:
     def save_logs(self):
         with open(self.log_file, "w") as file:
             json.dump(self.log_data, file, indent=2)
-
-def get_tool_names():
-    # Get all the classes defined in the script
-    classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
-
-    # Extract the class names excluding the imported ones
-    class_names = [cls[0] for cls in classes if cls[1].__module__ == 'src.tools']
-
-    return class_names
 
 def agent_dispatcher(query, agents,tools, resources):
     chat = [{"role": "user", "content": query}]
