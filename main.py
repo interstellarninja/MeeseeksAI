@@ -1,3 +1,4 @@
+import argparse
 import json
 import uuid
 from typing import Any, Callable, Dict, List, Optional
@@ -12,14 +13,17 @@ from bs4 import BeautifulSoup
 import PyPDF2
 import os
 import hashlib
-from src.resources import Resource
+import sys
+import inspect
 
-from src.tools import TextReaderTool, WebScraperTool, SemanticAnalysisTool, NERExtractionTool, SemanticFileSearchTool, WikipediaSearchTool
+from src.prompter import PromptManager
+from src.tools import *
+from src.resources import Resource
 from src.agents import Agent
 from src.tasks import Task
 
 class Squad:
-    def __init__(self, agents: List['Agent'], tasks: List['Task'], resources: List['Resources'], verbose: bool = False, log_file: str = "squad_log.json"):
+    def __init__(self, agents: List['Agent'], tasks: List['Task'], resources: List['Resource'], verbose: bool = False, log_file: str = "squad_log.json"):
         self.id = str(uuid.uuid4())
         self.agents = agents
         self.tasks = tasks
@@ -129,8 +133,41 @@ class Squad:
         with open(self.log_file, "w") as file:
             json.dump(self.log_data, file, indent=2)
 
+def get_tool_names():
+    # Get all the classes defined in the script
+    classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+
+    # Extract the class names excluding the imported ones
+    class_names = [cls[0] for cls in classes if cls[1].__module__ == 'src.tools']
+
+    return class_names
+
+def agent_dispatcher(query, agents,tools, resources):
+    chat = [{"role": "user", "content": query}]
+    prompter = PromptManager()
+    messages = prompter.generate_prompt(chat, tools, agents, resources)
+
+    client = OpenAI(
+        base_url='http://localhost:11434/v1',
+        api_key='ollama'
+    )
+    response = client.chat.completions.create(
+        model="adrienbrault/nous-hermes2pro:Q4_0",
+        messages=messages,
+    )
+    print(response)
+    completion = response.choices[0].message.content
+
+    return completion
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Run the squad with dynamic configurations.")
+    parser.add_argument('-q', '--query', type=str, help="user query for agents to assist with", required=True)
+    return parser.parse_args()
 
 def mainflow():
+    args = parse_args()
+
     file_path = os.path.join(os.getcwd())
     with open(os.path.join(file_path, "configs/agents.json"), "r") as file:
         agents = json.load(file)
@@ -143,6 +180,14 @@ def mainflow():
     with open(os.path.join(file_path, "configs/resources.json"), "r") as file:
         resources = json.load(file)
     resources = [Resource(**resource) for resource in resources]
+
+    tools = get_tool_names()
+
+    # TODO we need to restrcuture agents such that tasks and tools are filled by the LLM as part of agent metadata
+    graph = agent_dispatcher(args.query, agents, tools, resources)
+
+    print(graph)
+
     #system_docs_resource = Resources('text', "inputs/system_documentation.txt", "The following is a snippet from the system documentation '{file}' (start: {start}, end: {end}):\n{chunk}")
     #define toolsettings for flow sesh
 
@@ -156,18 +201,17 @@ def mainflow():
     #wikipedia_search_tool = WikipediaSearchTool(chunk_size=500, num_chunks=5)
 
     # the squad is where you define the flow of the pipeline, sequence of events.
-    
-    # TODO we need to restrcuture agents such that tasks and tools are filled by the LLM as part of agent metadata
-    squad = Squad(
-        agents=agents,
-        tasks=tasks,
-        resources=resources,
-        verbose=True,
-        log_file="squad_goals" + datetime.now().strftime("%Y%m%d%H%M%S") + ".json"
-    )
-
-    result = squad.run()
-    print(f"Final output:\n{result}")
+#
+    #squad = Squad(
+    #    agents=agents,
+    #    tasks=tasks,
+    #    resources=resources,
+    #    verbose=True,
+    #    log_file="squad_goals" + datetime.now().strftime("%Y%m%d%H%M%S") + ".json"
+    #)
+#
+    #result = squad.run()
+    #print(f"Final output:\n{result}")
 
 if __name__ == "__main__":
     mainflow()
