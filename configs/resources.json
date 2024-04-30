@@ -1,0 +1,17 @@
+[
+    {
+        "type": "text",
+        "path": "inputs/press_release.txt",
+        "template": "Here are your thoughts on the statement '{chunk}' from the file '{file}' (start: {start}, end: {end}):"
+    },
+    {
+        "type": "pdf",
+        "path": "inputs/sec_filings_10k.pdf",
+        "template": "The following excerpt is from the PDF '{file}' (start: {start}, end: {end}):\\n{chunk}"
+    },
+    {
+        "type": "web",
+        "path": "https://blogs.nvidia.com/",
+        "template": "The following content is scraped from the web page '{file}':\\n{chunk}"
+    }
+]

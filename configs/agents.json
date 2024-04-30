@@ -1,0 +1,59 @@
+[
+    {
+        "role": "Researcher",
+        "goal": "Analyze the provided text and extract relevant information.",
+        "tools": ["TextReaderTool"],
+        "verbose": true
+    },
+    {
+        "role": "Wikipedia Expert",
+        "goal": "Provide contextual information from Wikipedia articles relevant to a given topic.",
+        "tools": ["WikipediaSearchTool"],
+        "verbose": true
+    },
+    {
+        "role": "Web Analyzer",
+        "goal": "Analyze the scraped web content and provide a summary.",
+        "tools": ["WebScraperTool"],
+        "verbose": true
+    },
+    {
+        "role": "Sentimentalizer",
+        "goal": "Analyze the sentiment of the extracted information.",
+        "tools": ["SemanticAnalysisTool"],
+        "verbose": true
+    },
+    {
+        "role": "Planner",
+        "goal": "Develop comprehensive plans and strategies for efficient systems management.",
+        "persona": "You are an experienced Systems Manager with a proven track record in developing and implementing effective plans and strategies to optimize system performance, ensure reliability, and improve operational efficiency.",
+        "tools": ["TextReaderTool"],
+        "verbose": true
+    },
+    {
+        "role": "Semantic Searcher",
+        "goal": "Perform semantic searches on a corpus of files to find relevant information.",
+        "persona": "You are an expert in semantic search and information retrieval.",
+        "tools": ["SemanticFileSearchTool"],
+        "verbose": true
+    },
+    {
+        "role": "Summarizer",
+        "persona": "You are a skilled Data Analyst with a knack for distilling complex information into concise summaries.",
+        "goal": "Compile a summary report based on the extracted information.",
+        "verbose": true
+    },
+    {
+        "role": "Entity Extractor",
+        "goal": "Extract named entities from the given text.",
+        "tools": ["NERExtractionTool"],
+        "model": "llama3",
+        "verbose": true
+    },
+    {
+        "role": "Mermaid",
+        "goal": "Generate an accurate representation of the information as a graph.",
+        "model": "adrienbrault/nous-hermes2pro:Q4_0",
+        "verbose": true
+    }
+]

@@ -1,0 +1,60 @@
+[
+    {
+        "instructions": "Analyze the provided text and identify key insights and patterns.",
+        "expected_output": "A list of key insights and patterns found in the text.",
+        "agent": "Researcher",
+        "output_file": "txt_analyzed.txt",
+        "tool_name": "text_reader"
+    },
+    {
+        "instructions": "Scrape the content from the provided URL and provide a summary.",
+        "expected_output": "A summary of the scraped web content.",
+        "agent": "Web Analyzer",
+        "tool_name": "web_scraper",
+        "output_file": "web_task_output.txt"
+    },
+    {
+        "instructions": "Analyze the provided system documentation and develop a comprehensive plan for enhancing system performance, reliability, and efficiency.",
+        "expected_output": "A detailed plan outlining strategies and steps for optimizing the systems.",
+        "agent": "Planner",
+        "tool_name": "system_docs",
+        "output_file": "system_plan.txt"
+    },
+    {
+        "instructions": "Search the provided files for information relevant to the given query.",
+        "expected_output": "A list of relevant files with their similarity scores.",
+        "agent": "Semantic Searcher",
+        "tool_name": "semantic_search",
+        "context": ["system_plan", "txt_task"]
+    },
+    {
+        "instructions": "Using the insights from the researcher and web analyzer, compile a summary report.",
+        "expected_output": "A well-structured summary report based on the extracted information.",
+        "agent": "Summarizer",
+        "context": ["system_plan", "txt_task", "web_task"],
+        "output_file": "task2_output.txt"
+    },
+    {
+        "instructions": "Analyze the sentiment of the extracted information.",
+        "expected_output": "A sentiment analysis report based on the extracted information.",
+        "agent": "Sentimentalizer",
+        "context": ["summary", "txt_task"],
+        "output_file": "sentimentalizer_output.txt",
+        "tool_name": "sentiment_analysis"
+    },
+    {
+        "instructions": "Extract named entities from the summary report.",
+        "expected_output": "A list of extracted named entities.",
+        "agent": "Entity Extractor",
+        "context": ["summary", "search_task"],
+        "output_file": "ner_output.txt",
+        "tool_name": "ner_extraction"
+    },
+    {
+        "instructions": "Generate a mermaid diagram based on the summary report.",
+        "expected_output": "A mermaid graph illustrating the relationships and connections in the summary report.\n```mermaid\ngraph TD\n",
+        "agent": "Mermaid",
+        "context": ["summary", "txt_task", "search_task"],
+        "output_file": "mermaid_output.txt"
+    }
+]
