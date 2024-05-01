@@ -1,21 +1,10 @@
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Optional, Callable
-from src.tools import TextReaderTool, WebScraperTool, SemanticAnalysisTool, NERExtractionTool, SemanticFileSearchTool, WikipediaSearchTool
+from src.rag_tools import TextReaderTool, WebScraperTool, SemanticAnalysisTool, NERExtractionTool, SemanticFileSearchTool, WikipediaSearchTool
 from openai import OpenAI
 import uuid
 from datetime import datetime
-
-CLIENTS = {
-    "ollama": OpenAI(
-        base_url='http://localhost:11434/v1',
-        api_key='ollama',
-    ),
-    "openai": OpenAI(
-        base_url='http://localhost:11434/v1',
-        api_key='openai',
-    ),
-    # Add more client definitions as needed
-}
+from src.clients import CLIENTS
 
 class Agent(BaseModel):
     class Config:
@@ -45,7 +34,7 @@ class Agent(BaseModel):
             super().__init__(**data)
             if not self.client:
                 raise ValueError("Client must be specified.")
-            self.client = CLIENTS.get(self.client)
+            self.client = CLIENTS.ollama
             if not self.client:
                 raise ValueError("Invalid client specified.")
 
