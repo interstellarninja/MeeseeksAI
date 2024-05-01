@@ -17,7 +17,7 @@ import argparse
 from datetime import datetime
 
 
-from src.tools import TextReaderTool, WebScraperTool, SemanticAnalysisTool, NERExtractionTool, SemanticFileSearchTool, WikipediaSearchTool
+from src.rag_tools import TextReaderTool, WebScraperTool, SemanticAnalysisTool, NERExtractionTool, SemanticFileSearchTool, WikipediaSearchTool
 from src import agents
 from src.agents import Agent
 from src import tasks
