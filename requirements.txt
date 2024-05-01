@@ -4,9 +4,13 @@ requests
 bs4
 python-dateutil
 tiktoken
+pandas
+yfinance
 PyPDF2
 textblob
 gpt4all
 spacy
 pickle5
 hashlib
+groq
+python-dotenv
