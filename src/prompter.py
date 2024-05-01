@@ -52,7 +52,7 @@ class PromptManager:
         )
         return prompt_schema
     
-    def generate_prompt(self, user_prompt, tools, agents, resources, num_fewshot=None):
+    def generate_prompt(self, tools, agents, resources, num_fewshot=None):
         prompt_path = os.path.join(self.script_dir, '../configs', 'sys_prompt.yaml')
         prompt_schema = self.read_yaml_file(prompt_path)
 
@@ -75,8 +75,8 @@ class PromptManager:
         }
         sys_prompt = self.format_yaml_prompt(prompt_schema, variables)
         print(sys_prompt)
-        prompt = [
-                {'content': sys_prompt, 'role': 'system'}
-            ]
-        prompt.extend(user_prompt)
-        return prompt
+        #prompt = [
+        #        {'content': sys_prompt, 'role': 'system'}
+        #    ]
+        #prompt.extend(user_prompt)
+        return sys_prompt
