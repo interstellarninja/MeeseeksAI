@@ -6,12 +6,15 @@ from typing import Any, Dict, List, Optional
 from openai import OpenAI
 from datetime import datetime
 
+from src.rag_tools import *
 from src.prompter import PromptManager
-from src.tools import *
 from src.resources import Resource
 from src.agents import Agent
 from src.tasks import Task
+from src.clients import CLIENTS
 from src.utils import get_tool_names
+from src.tools import get_openai_tools
+
 
 class Squad:
     def __init__(self, agents: List['Agent'], tasks: List['Task'], resources: List['Resource'], verbose: bool = False, log_file: str = "squad_log.json"):
@@ -127,18 +130,23 @@ class Squad:
 def agent_dispatcher(query, agents,tools, resources):
     chat = [{"role": "user", "content": query}]
     prompter = PromptManager()
-    messages = prompter.generate_prompt(chat, tools, agents, resources)
+    sys_prompt = prompter.generate_prompt(tools, agents, resources)
 
-    client = OpenAI(
-        base_url='http://localhost:11434/v1',
-        api_key='ollama'
-    )
-    response = client.chat.completions.create(
-        model="adrienbrault/nous-hermes2pro:Q4_0",
-        messages=messages,
+    #client = CLIENTS['groq']
+    client = CLIENTS.anthropic
+    #response = client.chat.completions.create(
+    response = client.messages.create(
+        #model="adrienbrault/nous-hermes2pro:Q4_0",
+        #model='llama3-70b-8192',
+        model = "claude-3-opus-20240229",
+        system = sys_prompt,
+        max_tokens = 1000,
+        temperature=0.5,
+        messages=chat,
     )
     print(response)
-    completion = response.choices[0].message.content
+    #completion = response.choices[0].message.content
+    completion = response.content[0].text
 
     return completion
 
@@ -163,7 +171,8 @@ def mainflow():
         resources = json.load(file)
     resources = [Resource(**resource) for resource in resources]
 
-    tools = get_tool_names()
+    #tools = get_tool_names()
+    tools = get_openai_tools()
 
     # TODO we need to restrcuture agents such that tasks and tools are filled by the LLM as part of agent metadata
     graph = agent_dispatcher(args.query, agents, tools, resources)
