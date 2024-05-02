@@ -1,15 +1,16 @@
-from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Optional, Callable
-from src.rag_tools import TextReaderTool, WebScraperTool, SemanticAnalysisTool, NERExtractionTool, SemanticFileSearchTool, WikipediaSearchTool
-from openai import OpenAI
 import uuid
+from pydantic import BaseModel, Field
 from datetime import datetime
 from src.clients import CLIENTS
+from src.tools import *
+from src.rag_tools import *
+# Import other tool classes and functions here
 
 class Agent(BaseModel):
     class Config:
         arbitrary_types_allowed = True  # Allow arbitrary types
-        exclude = {"client", "tools"}
+        exclude = {"client", "tool_objects"}
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     role: str
@@ -29,42 +30,40 @@ class Agent(BaseModel):
     output_tasks: List = []
     interactions: List[Dict] = []
     client: str = "ollama"
+    tool_objects: Dict[str, Any] = {}
 
     def __init__(self, **data: Any):
-            super().__init__(**data)
-            if not self.client:
-                raise ValueError("Client must be specified.")
-            self.client = CLIENTS.ollama
-            if not self.client:
-                raise ValueError("Invalid client specified.")
+        super().__init__(**data)
+        if not self.client:
+            raise ValueError("Client must be specified.")
+        self.client = CLIENTS.ollama
+        if not self.client:
+            raise ValueError("Invalid client specified.")
+        self.tool_objects = self.create_tool_objects()
 
-    def execute_task(self, task, context: Optional[str] = None) -> str:
+    def create_tool_objects(self) -> Dict[str, Any]:
+        tool_objects = {}
+        for tool_name in self.tools:
+            if tool_name in globals():
+                tool_objects[tool_name] = globals()[tool_name]
+            else:
+                raise ValueError(f"Tool '{tool_name}' not found.")
+        return tool_objects
+
+    def execute(self, context: Optional[str] = None) -> str:
         messages = []
         if self.persona and self.verbose:
             messages.append({"role": "system", "content": f"Background: {self.persona}"})
-        messages.append({"role": "system", "content": f"You are a {self.role} with the goal: {self.goal}. The expected output is: {task.expected_output}"})
-        messages.append({"role": "user", "content": f"Your task is to {task.instructions}."})
+        messages.append({"role": "system", "content": f"You are a {self.role} with the goal: {self.goal}."})
+        messages.append({"role": "user", "content": f"Your task is to {self.goal}."})
         if context:
-            messages.append({"role": "assistant", "content": f"Context from {task.context_agent_role}:\n{context}"})
+            messages.append({"role": "assistant", "content": f"Context:\n{context}"})
 
-        if task.tool_name in self.tools:
-            tool = self.tools[task.tool_name]
-            if isinstance(tool, TextReaderTool) or isinstance(tool, WebScraperTool):
-                text_chunks = tool.read_text() if isinstance(tool, TextReaderTool) else tool.scrape_text()
-                for i, chunk in enumerate(text_chunks, start=1):
-                    messages.append({"role": "system", "content": f"<text_chunk{i}>{chunk['text']}</text_chunk{i}>"})
-            elif isinstance(tool, SemanticAnalysisTool):
-                sentiment_result = tool.analyze_sentiment()
-                messages.append({"role": "system", "content": f"Sentiment Analysis Result: {sentiment_result}"})
-            elif isinstance(tool, NERExtractionTool):
-                entities = tool.extract_entities(context)
-                messages.append({"role": "system", "content": f"Extracted Entities: {entities}"})
-            elif isinstance(tool, SemanticFileSearchTool):
-                query = "\n".join([c.output for c in task.context if c.output])
-                relevant_chunks = tool.search(query)
-                for chunk in relevant_chunks:
-                    chunk_text = f"File: {chunk['file']}\nText: {chunk['text']}\nScore: {chunk['score']:.3f}"
-                    messages.append({"role": "system", "content": chunk_text})
+        for tool_name, tool_object in self.tool_objects.items():
+            if callable(tool_object):
+                # Call the tool and append the result to messages
+                result = tool_object()
+                messages.append({"role": "system", "content": f"Tool '{tool_name}' result: {result}"})
 
         response = self.client.chat.completions.create(
             model=self.model,
@@ -75,7 +74,7 @@ class Agent(BaseModel):
         self.log_interaction(messages, result)
 
         if self.step_callback:
-            self.step_callback(task, result)
+            self.step_callback(self, result)
 
         return result
 
@@ -85,4 +84,3 @@ class Agent(BaseModel):
             "response": response,
             "timestamp": datetime.now().isoformat()
         })
-
