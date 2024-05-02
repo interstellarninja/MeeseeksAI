@@ -27,9 +27,11 @@ Schema: |
   Use the following pydantic model json schema for each agent's metadata within the graph:
   {schema}
 Instructions: |
-  Return the mermaid graph within <agents></agents> XML tags as follows:
-  <agents>
+  Return the mermaid graph within <graph></graph> and agent metadata json list withing <agents></agents> XML tags as follows:
+  <graph>
   graph TD
-    researcher["Researcher
+  ...
+  </graph>
+  <agents>
   ...
   </agents>
