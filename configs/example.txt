@@ -1,42 +1,72 @@
+<scratchpad>
+To analyze TSLA stock and provide a portfolio recommendation, I will:
+
+1. Have the Researcher extract key financial data and ratios from TSLA's SEC filings using the TextReaderTool, get_financial_statements, and get_key_financial_ratios tools. 
+
+2. Have the Web Analyzer scrape recent news about TSLA and analyze the sentiment using the WebScraperTool and get_company_news tools.
+
+3. Have the Wikipedia Expert provide background information on Tesla as a company using the WikipediaSearchTool.
+
+4. Have the Summarizer compile a summary of the financial data, news sentiment, and company background. 
+
+5. Have the Planner analyze the summarized information and make a buy/hold/sell recommendation for including TSLA in an investment portfolio.
+</scratchpad>
+
+<graph>
 graph TD
-  researcher["Researcher {
-    'role': 'Researcher',
-    'goal': 'Extract key financial data from NVIDIA\'s 10-K filing',
-    'tools': ['TextReaderTool'],
-    'verbose': true
-  }"]
-
-  web["Web Analyzer {
-    'role': 'Web Analyzer',
-    'goal': 'Scrape and summarize recent news from NVIDIA\'s blog',
-    'tools': ['WebScraperTool'],
-    'verbose': true
-  }"]
-
-  wiki["Wikipedia Expert {
-    'role': 'Wikipedia Expert',
-    'goal': 'Provide background information on NVIDIA',
-    'tools': ['WikipediaSearchTool'],
-    'verbose': true
-  }"]
-
-  summarizer["Summarizer {
-    'role': 'Summarizer',
-    'goal': 'Summarize financial data and news',
-    'persona': 'You are a skilled data analyst with expertise in summarizing complex financial information',
-    'tools': [],
-    'verbose': true
-  }"]
-
-  planner["Planner {
-    'role': 'Planner',
-    'goal': 'Perform financial analysis and make portfolio recommendation',
-    'persona': 'You are an experienced portfolio manager with a strong background in analyzing tech stocks',
-    'tools': ['TextReaderTool'],
-    'verbose': true
-  }"]
-
+  researcher["Researcher
+  Extract key financial data and ratios from TSLA's SEC filings"] 
+  web["Web Analyzer
+  Scrape recent news and analyze sentiment about TSLA"]
+  wiki["Wikipedia Expert
+  Provide background information on Tesla as a company"]
+  summarizer["Summarizer
+  Summarize the financial data, news, and background on TSLA"]
+  planner["Planner
+  Analyze the summarized data and make a portfolio recommendation for TSLA"]
+  
   researcher --> summarizer
-  web --> summarizer
-  wiki --> planner
+  web --> summarizer 
+  wiki --> summarizer
   summarizer --> planner
+</graph>
+
+<agents>
+[
+  {
+    "role": "Researcher",
+    "goal": "Extract key financial data and ratios from TSLA's SEC filings",
+    "persona": "You are a financial analyst skilled at extracting key data from SEC filings",
+    "tools": ["TextReaderTool", "get_financial_statements", "get_key_financial_ratios"],
+    "verbose": true
+  },
+  {
+    "role": "Web Analyzer", 
+    "goal": "Scrape recent news and analyze sentiment about TSLA",
+    "persona": "You are a web scraping expert who can analyze news sentiment",
+    "tools": ["WebScraperTool", "get_company_news"],
+    "verbose": true
+  },
+  {
+    "role": "Wikipedia Expert",
+    "goal": "Provide background information on Tesla as a company",
+    "persona": "You are an expert at finding relevant information on Wikipedia",
+    "tools": ["WikipediaSearchTool"],
+    "verbose": true
+  },
+  {
+    "role": "Summarizer",
+    "goal": "Summarize the financial data, news, and background on TSLA",
+    "persona": "You are a skilled financial analyst with expertise in summarizing complex information about companies", 
+    "tools": [],
+    "verbose": true
+  },
+  {
+    "role": "Planner",
+    "goal": "Analyze the summarized data and make a portfolio recommendation for TSLA",
+    "persona": "You are an experienced portfolio manager specializing in high-growth tech stocks",
+    "tools": ["TextReaderTool"],
+    "verbose": true
+  }
+]
+</agents>
