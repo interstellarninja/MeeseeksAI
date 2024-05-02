@@ -1,7 +1,9 @@
 import os
+import re
 import json
 import uuid
 import argparse
+import networkx as nx
 from typing import Any, Dict, List, Optional
 from openai import OpenAI
 from datetime import datetime
@@ -10,122 +12,122 @@ from src.rag_tools import *
 from src.prompter import PromptManager
 from src.resources import Resource
 from src.agents import Agent
-from src.tasks import Task
+#from src.tasks import Task
 from src.clients import CLIENTS
 from src.utils import get_tool_names
 from src.tools import get_openai_tools
 
 
-class Squad:
-    def __init__(self, agents: List['Agent'], tasks: List['Task'], resources: List['Resource'], verbose: bool = False, log_file: str = "squad_log.json"):
-        self.id = str(uuid.uuid4())
-        self.agents = agents
-        self.tasks = tasks
-        self.resources = resources
-        self.verbose = verbose
-        self.log_file = log_file
-        self.log_data = []
-        self.llama_logs = []  # Attribute to store LLM interactions
+#class Squad:
+#    def __init__(self, agents: List['Agent'], tasks: List['Task'], resources: List['Resource'], verbose: bool = False, log_file: str = "squad_log.json"):
+#        self.id = str(uuid.uuid4())
+#        self.agents = agents
+#        self.tasks = tasks
+#        self.resources = resources
+#        self.verbose = verbose
+#        self.log_file = log_file
+#        self.log_data = []
+#        self.llama_logs = []  # Attribute to store LLM interactions
 
-    def run(self, inputs: Optional[Dict[str, Any]] = None) -> str:
-        context = ""
-        for task in self.tasks:
-            if self.verbose:
-                print(f"Starting Task:\n{task.instructions}")
+#    def run(self, inputs: Optional[Dict[str, Any]] = None) -> str:
+#        context = ""
+#        for task in self.tasks:
+#            if self.verbose:
+#                print(f"Starting Task:\n{task.instructions}")
 
-            # Log the input to the task
-            self.log_data.append({
-                "timestamp": datetime.now().isoformat(),
-                "type": "input",
-                "agent_role": task.agent.role,
-                "task_name": task.instructions,
-                "task_id": task.id,
-                "content": task.instructions
-            })
+#            # Log the input to the task
+#            self.log_data.append({
+#                "timestamp": datetime.now().isoformat(),
+#                "type": "input",
+#                "agent_role": task.agent.role,
+#                "task_name": task.instructions,
+#                "task_id": task.id,
+#                "content": task.instructions
+#            })
 
-            # Execute the task and retrieve the output
-            output = task.execute(context=context)
-            task.output = output
+#            # Execute the task and retrieve the output
+#            output = task.execute(context=context)
+#            task.output = output
 
-            if self.verbose:
-                print(f"Task output:\n{output}\n")
+#            if self.verbose:
+#                print(f"Task output:\n{output}\n")
 
-            # Log the output from the task
-            self.log_data.append({
-                "timestamp": datetime.now().isoformat(),
-                "type": "output",
-                "agent_role": task.agent.role,
-                "task_name": task.instructions,
-                "task_id": task.id,
-                "content": output
-            })
+#            # Log the output from the task
+#            self.log_data.append({
+#                "timestamp": datetime.now().isoformat(),
+#                "type": "output",
+#                "agent_role": task.agent.role,
+#                "task_name": task.instructions,
+#                "task_id": task.id,
+#                "content": output
+#            })
 
-            # Collect LLM interactions from the agent after task execution
-            self.llama_logs.extend(task.agent.interactions)  # Assuming interactions are collected in each agent
+#            # Collect LLM interactions from the agent after task execution
+#            self.llama_logs.extend(task.agent.interactions)  # Assuming interactions are collected in each agent
 
-            context += f"Task:\n{task.instructions}\nOutput:\n{output}\n\n"
+#            context += f"Task:\n{task.instructions}\nOutput:\n{output}\n\n"
 
-            # Additional logic for handling specific tools used by tasks
-            self.handle_tool_logic(task, context)
+#            # Additional logic for handling specific tools used by tasks
+#            self.handle_tool_logic(task, context)
 
-        # Writing all logged data and LLM interactions to JSON files
-        self.save_logs()
-        self.save_llama_logs()
+#        # Writing all logged data and LLM interactions to JSON files
+#        self.save_logs()
+#        self.save_llama_logs()
 
-        return context
+#        return context
 
-    def handle_tool_logic(self, task, context):
-        if task.tool_name in task.agent.tools:
-            tool = task.agent.tools[task.tool_name]
-            if isinstance(tool, TextReaderTool) or isinstance(tool, WebScraperTool) or isinstance(tool, SemanticFileSearchTool):
-                text_chunks = self.handle_specific_tool(task, tool)
-                for i, chunk in enumerate(text_chunks, start=1):
-                    self.log_data.append({
-                        "timestamp": datetime.now().isoformat(),
-                        "type": "text_chunk",
-                        "task_id": task.id,
-                        "chunk_id": i,
-                        "text": chunk['text'],
-                        "start": chunk.get('start', 0),
-                        "end": chunk.get('end', len(chunk['text'])),
-                        "file": chunk.get('file', '')
-                    })
+#    def handle_tool_logic(self, task, context):
+#        if task.tool_name in task.agent.tools:
+#            tool = task.agent.tools[task.tool_name]
+#            if isinstance(tool, TextReaderTool) or isinstance(tool, WebScraperTool) or isinstance(tool, SemanticFileSearchTool):
+#                text_chunks = self.handle_specific_tool(task, tool)
+#                for i, chunk in enumerate(text_chunks, start=1):
+#                    self.log_data.append({
+#                        "timestamp": datetime.now().isoformat(),
+#                        "type": "text_chunk",
+#                        "task_id": task.id,
+#                        "chunk_id": i,
+#                        "text": chunk['text'],
+#                        "start": chunk.get('start', 0),
+#                        "end": chunk.get('end', len(chunk['text'])),
+#                        "file": chunk.get('file', '')
+#                    })
 
-            if isinstance(tool, SemanticAnalysisTool):
-                sentiment_result = tool.analyze_sentiment(task.output)
-                self.log_data.append({
-                    "timestamp": datetime.now().isoformat(),
-                    "type": "sentiment_analysis",
-                    "task_id": task.id,
-                    "content": sentiment_result
-                })
-                context += f"Sentiment Analysis Result: {sentiment_result}\n\n"
+#            if isinstance(tool, SemanticAnalysisTool):
+#                sentiment_result = tool.analyze_sentiment(task.output)
+#                self.log_data.append({
+#                    "timestamp": datetime.now().isoformat(),
+#                    "type": "sentiment_analysis",
+#                    "task_id": task.id,
+#                    "content": sentiment_result
+#                })
+#                context += f"Sentiment Analysis Result: {sentiment_result}\n\n"
 
-            if isinstance(tool, NERExtractionTool):
-                entities = tool.extract_entities(task.output)
-                self.log_data.append({
-                    "timestamp": datetime.now().isoformat(),
-                    "type": "ner_extraction",
-                    "task_id": task.id,
-                    "content": [ent['text'] for ent in entities]
-                })
-                context += f"Extracted Entities: {[ent['text'] for ent in entities]}\n\n"
+#            if isinstance(tool, NERExtractionTool):
+#                entities = tool.extract_entities(task.output)
+#                self.log_data.append({
+#                    "timestamp": datetime.now().isoformat(),
+#                    "type": "ner_extraction",
+#                    "task_id": task.id,
+#                    "content": [ent['text'] for ent in entities]
+#                })
+#                context += f"Extracted Entities: {[ent['text'] for ent in entities]}\n\n"
 
-    def handle_specific_tool(self, task, tool):
-        if isinstance(tool, SemanticFileSearchTool):
-            # Construct the query by joining the outputs from the context tasks
-            query = "\n".join([c.output for c in task.context if c.output])
-            return tool.search(query)
-        else:
-            return tool.read_text() if isinstance(tool, TextReaderTool) else tool.scrape_text()
+#    def handle_specific_tool(self, task, tool):
+#        if isinstance(tool, SemanticFileSearchTool):
+#            # Construct the query by joining the outputs from the context tasks
+#            query = "\n".join([c.output for c in task.context if c.output])
+#            return tool.search(query)
+#        else:
+#            return tool.read_text() if isinstance(tool, TextReaderTool) else tool.scrape_text()
 
-    def save_llama_logs(self):
-        with open(("qa_interactions" + datetime.now().strftime("%Y%m%d%H%M%S") + ".json"), "w") as file:
-            json.dump(self.llama_logs, file, indent=2)
+#    def save_llama_logs(self):
+#        with open(("qa_interactions" + datetime.now().strftime("%Y%m%d%H%M%S") + ".json"), "w") as file:
+#            json.dump(self.llama_logs, file, indent=2)
 
-    def save_logs(self):
-        with open(self.log_file, "w") as file:
-            json.dump(self.log_data, file, indent=2)
+#    def save_logs(self):
+#        with open(self.log_file, "w") as file:
+#            json.dump(self.log_data, file, indent=2)
 
 def agent_dispatcher(query, agents,tools, resources):
     chat = [{"role": "user", "content": query}]
@@ -147,37 +149,115 @@ def agent_dispatcher(query, agents,tools, resources):
     print(response)
     #completion = response.choices[0].message.content
     completion = response.content[0].text
+        # Convert the tools list to a dictionary
+    tools_dict = {tool: None for tool in tools}
 
-    return completion
+    return completion, tools_dict
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run the squad with dynamic configurations.")
     parser.add_argument('-q', '--query', type=str, help="user query for agents to assist with", required=True)
-    return parser.parse_args()
+    return parser.parse_args(
+
+    )
+
+def extract_agents_from_mermaid(mermaid_graph):
+    # Extract the graph content from within the <graph> tags
+    graph_content = re.search(r'<graph>(.*?)</graph>', mermaid_graph, re.DOTALL).group(1)
+
+    # Extract the metadata content from within the <agents> tags
+    metadata_content = re.search(r'<agents>(.*?)</agents>', mermaid_graph, re.DOTALL).group(1)
+
+    dependency_pattern = r'(\w+) --> (\w+)'
+
+    agents_metadata = json.loads(metadata_content)
+    dependencies = []
+
+    for match in re.finditer(dependency_pattern, graph_content):
+        source = match.group(1)
+        target = match.group(2)
+        dependencies.append((source, target))
+
+    # Add dependencies to agent metadata
+    for agent in agents_metadata:
+        agent["dependencies"] = [target for source, target in dependencies if source == agent["role"]]
+        agent["tools"] = {tool: None for tool in agent["tools"]}
+    
+    return agents_metadata
 
 def mainflow():
     args = parse_args()
 
     file_path = os.path.join(os.getcwd())
     with open(os.path.join(file_path, "configs/agents.json"), "r") as file:
-        agents = json.load(file)
-    agents = [Agent(**agent) for agent in agents]
+        agents_data = json.load(file)
+    agents = [Agent(**agent_data) for agent_data in agents_data]
 
-    with open(os.path.join(file_path, "configs/tasks.json"), "r") as file:
-        tasks = json.load(file)
-    tasks = [Task(**task) for task in tasks]
-
+    #with open(os.path.join(file_path, "configs/tasks.json"), "r") as file:
+    #    tasks_data = json.load(file)
+    #tasks = [Task(**task_data) for task_data in tasks_data]
+#
     with open(os.path.join(file_path, "configs/resources.json"), "r") as file:
-        resources = json.load(file)
-    resources = [Resource(**resource) for resource in resources]
+        resources_data = json.load(file)
+    resources = [Resource(**resource_data) for resource_data in resources_data]
 
-    #tools = get_tool_names()
     tools = get_openai_tools()
+    tools_dict = {tool["function"]["name"]: tool for tool in tools}
 
-    # TODO we need to restrcuture agents such that tasks and tools are filled by the LLM as part of agent metadata
-    graph = agent_dispatcher(args.query, agents, tools, resources)
+    # Check if the mermaid graph and agent metadata files exist
+    mermaid_graph_file = "mermaid_graph.txt"
+    agent_metadata_file = "agent_metadata.json"
 
-    print(graph)
+    if os.path.exists(mermaid_graph_file) and os.path.exists(agent_metadata_file):
+        # Read the mermaid graph and agent metadata from files
+        with open(mermaid_graph_file, "r") as file:
+            mermaid_graph = file.read()
+        with open(agent_metadata_file, "r") as file:
+            agents_metadata = json.load(file)
+    else:
+        # Generate the mermaid graph using the LLM
+        mermaid_graph, tools_dict = agent_dispatcher(args.query, agents, tools, tools_dict)
+
+        print(mermaid_graph)
+
+        # Extract the agents metadata from the mermaid graph
+        agents_metadata = extract_agents_from_mermaid(mermaid_graph)
+
+        # Save the mermaid graph and agent metadata to files
+        with open(mermaid_graph_file, "w") as file:
+            file.write(mermaid_graph)
+        with open(agent_metadata_file, "w") as file:
+            json.dump(agents_metadata, file, indent=2)
+
+    # Create a directed graph using NetworkX
+    G = nx.DiGraph()
+
+    # Add nodes to the graph using agent metadata
+    for agent_data in agents_metadata:
+        agent_role = agent_data["role"]
+        G.add_node(agent_role, **agent_data)
+
+    # Perform a topological sort to determine the execution order
+    execution_order = list(nx.topological_sort(G))
+
+    # Execute the agents in the determined order
+    context = ""
+    for agent_role in execution_order:
+        agent_data = G.nodes[agent_role]
+        agent = Agent(**agent_data)
+
+        if agent.verbose:
+            print(f"Starting Agent: {agent.role}")
+
+        # Execute the agent and retrieve the output
+        output = agent.execute(context=context)
+
+        if agent.verbose:
+            print(f"Agent output:\n{output}\n")
+
+        context += f"Agent: {agent.role}\nGoal: {agent.goal}\nOutput:\n{output}\n\n"
+
+    print(f"Final output:\n{context}")
 
     #system_docs_resource = Resources('text', "inputs/system_documentation.txt", "The following is a snippet from the system documentation '{file}' (start: {start}, end: {end}):\n{chunk}")
     #define toolsettings for flow sesh
