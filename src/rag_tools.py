@@ -7,20 +7,23 @@ import spacy
 from textblob import TextBlob
 import pickle
 from gpt4all import Embed4All
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Type
+from pydantic import BaseModel, Field
+from langchain.tools import BaseTool
+from langchain.callbacks.manager import CallbackManagerForToolRun
 
-from src.resources import Resource, TextChunker
+from resources import TextChunker
 
-# Tools for reading text, scraping web content, extracting named entities, and performing sentiment analysis
+class WikipediaSearchInput(BaseModel):
+    query: str = Field(description="The search query for Wikipedia")
+    top_k: int = Field(default=3, description="The number of top search results to return")
 
-class WikipediaSearchTool:
-    def __init__(self, resource: Resource, chunk_size: int = 1000, num_chunks: int = 10):
-        self.resource = resource
-        self.chunk_size = chunk_size
-        self.num_chunks = num_chunks
-        self.chunker = TextChunker()
+class WikipediaSearchTool(BaseTool):
+    name = "wikipedia_search"
+    description = "Searches Wikipedia for relevant information based on a given query"
+    args_schema: Type[BaseModel] = WikipediaSearchInput
 
-    def search_wikipedia(self, query: str, top_k: int = 3) -> List[Dict[str, str]]:
+    def _run(self, query: str, top_k: int = 3, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, str]]:
         url = f"https://en.wikipedia.org/w/index.php?search={query}&title=Special:Search&fulltext=1"
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -32,18 +35,25 @@ class WikipediaSearchTool:
             page_response = requests.get(url)
             page_soup = BeautifulSoup(page_response.text, 'html.parser')
             content = page_soup.find('div', class_='mw-parser-output').get_text()
-            chunks = self.chunker.chunk_text(text=content, chunk_size=self.chunk_size, num_chunks=self.num_chunks)
+            chunks = TextChunker().chunk_text(text=content, chunk_size=1000, num_chunks=10)
             search_results.append({'title': title, 'url': url, 'chunks': chunks})
             if len(search_results) >= top_k:
                 break
 
         return search_results
 
-# Takes a list of file paths, embeds the text in the files, and allows semantic search based on a query
+    async def _arun(self, query: str, top_k: int = 3, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, str]]:
+        raise NotImplementedError("WikipediaSearchTool does not support async")
 
-class SemanticFileSearchTool:
-    def __init__(self, resource: Resource, file_paths: List[str], embed_model: str, embed_dim: int = 768, chunk_size: int = 1000, top_k: int = 3):
-        self.resource = resource
+class SemanticFileSearchInput(BaseModel):
+    query: str = Field(description="The search query for semantic file search")
+
+class SemanticFileSearchTool(BaseTool):
+    name = "semantic_file_search"
+    description = "Performs semantic search on a set of files based on a given query"
+    args_schema: Type[BaseModel] = SemanticFileSearchInput
+
+    def __init__(self, file_paths: List[str], embed_model: str, embed_dim: int = 768, chunk_size: int = 1000, top_k: int = 3):
         self.embedder = Embed4All(embed_model)
         self.embed_dim = embed_dim
         self.chunk_size = chunk_size
@@ -94,7 +104,7 @@ class SemanticFileSearchTool:
         with open(pickle_file, 'rb') as f:
             self.file_embeddings = pickle.load(f)
 
-    def search(self, query: str) -> List[Dict[str, Any]]:
+    def _run(self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, Any]]:
         query_embedding = self.embedder.embed(query, prefix='search_query')
         scores = []
         for file_path, chunk_data in self.file_embeddings.items():
@@ -118,33 +128,45 @@ class SemanticFileSearchTool:
         b = np.array(b)
         return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-# Simple tool to read text from a file and chunk it into smaller pieces
+    async def _arun(self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, Any]]:
+        raise NotImplementedError("SemanticFileSearchTool does not support async")
 
-class TextReaderTool:
-    def __init__(self, resource: Resource, text_file: str, chunk_size: int, num_chunks: int):
-        self.resource = resource
-        self.text_file = text_file
+class TextReaderInput(BaseModel):
+    text_file: str = Field(description="The path to the text file to read")
+
+class TextReaderTool(BaseTool):
+    name = "text_reader"
+    description = "Reads text from a file and chunks it into smaller pieces"
+    args_schema: Type[BaseModel] = TextReaderInput
+
+    def __init__(self, chunk_size: int, num_chunks: int):
         self.chunk_size = chunk_size
         self.num_chunks = num_chunks
 
-    def read_text(self) -> List[Dict[str, Any]]:
-        with open(self.text_file, "r") as file:
+    def _run(self, text_file: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, Any]]:
+        with open(text_file, "r") as file:
             text = file.read()
             chunker = TextChunker(text, self.chunk_size, overlap=0)
             chunks = chunker.chunk_text()
             return chunks[:self.num_chunks]
 
-# Tool to scrape text from a web page and chunk it into smaller pieces
+    async def _arun(self, text_file: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, Any]]:
+        raise NotImplementedError("TextReaderTool does not support async")
 
-class WebScraperTool:
-    def __init__(self, resource: Resource, url: str, chunk_size: int, num_chunks: int):
-        self.resource = resource
-        self.url = url
+class WebScraperInput(BaseModel):
+    url: str = Field(description="The URL of the web page to scrape")
+
+class WebScraperTool(BaseTool):
+    name = "web_scraper"
+    description = "Scrapes text from a web page and chunks it into smaller pieces"
+    args_schema: Type[BaseModel] = WebScraperInput
+
+    def __init__(self, chunk_size: int, num_chunks: int):
         self.chunk_size = chunk_size
         self.num_chunks = num_chunks
 
-    def scrape_text(self) -> List[Dict[str, Any]]:
-        response = requests.get(self.url)
+    def _run(self, url: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, Any]]:
+        response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
         
         text = soup.get_text(separator='\n')
@@ -154,18 +176,22 @@ class WebScraperTool:
         chunks = chunker.chunk_text()
         return chunks[:self.num_chunks]
 
-# Tool to extract named entities from text using spaCy
+    async def _arun(self, url: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, Any]]:
+        raise NotImplementedError("WebScraperTool does not support async")
 
-class NERExtractionTool:
-    def __init__(self, resource: Resource, text: str = None):
-        self.resource = resource
-        self.text = text
+class NERExtractionInput(BaseModel):
+    text: str = Field(description="The text to extract named entities from")
+
+class NERExtractionTool(BaseTool):
+    name = "ner_extraction"
+    description = "Extracts named entities from text using spaCy"
+    args_schema: Type[BaseModel] = NERExtractionInput
+
+    def __init__(self):
         self.nlp = spacy.load("en_core_web_sm")
 
-    def extract_entities(self, text: Optional[str] = None) -> List[Dict[str, Any]]:
-        if text is not None:
-            self.text = text
-        doc = self.nlp(self.text)
+    def _run(self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, Any]]:
+        doc = self.nlp(text)
         entities = []
 
         for ent in doc.ents:
@@ -178,19 +204,24 @@ class NERExtractionTool:
 
         return entities
 
-# Tool to perform sentiment analysis using TextBlob
+    async def _arun(self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> List[Dict[str, Any]]:
+        raise NotImplementedError("NERExtractionTool does not support async")
 
-class SemanticAnalysisTool:
-    def __init__(self, resource: Resource, text: str = None):
-        self.resource = resource
-        self.text = text
+class SemanticAnalysisInput(BaseModel):
+    text: str = Field(description="The text to perform sentiment analysis on")
 
-    def analyze_sentiment(self, text: Optional[str] = None) -> Dict[str, Any]:
-        if text is not None:
-            self.text = text
-        blob = TextBlob(self.text)
+class SemanticAnalysisTool(BaseTool):
+    name = "semantic_analysis"
+    description = "Performs sentiment analysis using TextBlob"
+    args_schema: Type[BaseModel] = SemanticAnalysisInput
+
+    def _run(self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> Dict[str, Any]:
+        blob = TextBlob(text)
         sentiment = blob.sentiment
         return {
             "polarity": sentiment.polarity,
             "subjectivity": sentiment.subjectivity
         }
+
+    async def _arun(self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> Dict[str, Any]:
+        raise NotImplementedError("SemanticAnalysisTool does not support async")
