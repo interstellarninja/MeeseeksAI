@@ -17,6 +17,11 @@ from src.clients import CLIENTS
 from src.utils import get_tool_names
 from src.tools import get_openai_tools
 
+import logfire
+
+#logfire.install_auto_tracing(modules=['Agent'])
+#logfire.configure(pydantic_plugin=logfire.PydanticPlugin(record='all'))
+
 
 #class Squad:
 #    def __init__(self, agents: List['Agent'], tasks: List['Task'], resources: List['Resource'], verbose: bool = False, log_file: str = "squad_log.json"):
