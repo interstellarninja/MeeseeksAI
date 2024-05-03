@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from langchain.tools import BaseTool
 from langchain.callbacks.manager import CallbackManagerForToolRun
 
-from resources import TextChunker
+from src.resources import TextChunker
 
 class WikipediaSearchInput(BaseModel):
     query: str = Field(description="The search query for Wikipedia")
