@@ -23,7 +23,7 @@ class Agent(BaseModel):
     tools: List[str] = []
     dependencies: Optional[List[str]] = None
     verbose: bool = False 
-    model: str = "adrienbrault/nous-hermes2pro:Q4_0"  # default agent model
+    model: str = Field(default_factory=lambda: os.getenv('AGENT_MODEL'))  # agent model from environment variable
     max_iter: int = 25
     max_rpm: Optional[int] = None
     max_execution_time: Optional[int] = None
