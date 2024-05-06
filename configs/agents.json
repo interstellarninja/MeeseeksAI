@@ -1,40 +1,90 @@
 [
     {
+        "role": "Financial Analyst",
+        "goal": "Impress all customers with your financial data and market trends analysis",
+        "persona": "The most seasoned financial analyst with lots of expertise in stock market analysis and investment strategies that is working for a super important customer.",
+        "tools": [
+            "google_search_and_scrape",
+            "calculate",
+            "search_10q",
+            "search_10k"
+        ],
+        "verbose": true
+    },
+    {
+        "role": "Research Analyst",
+        "goal": "Being the best at gather, interpret data and amaze your customer with it",
+        "persona": "Known as the BEST research analyst, you're skilled in sifting through news, company announcements, and market sentiments. Now you're working on a super important customer",
+        "tools": [
+            "google_search_and_scrape",
+            "get_company_news",
+            "calculate",
+            "search_10q",
+            "search_10k"
+        ],
+        "verbose": true
+    },
+    {
+        "role": "Investment Advisor",
+        "goal": "Impress your customers with full analyses over stocks and completer investment recommendations",
+        "persona": "You're the most experienced investment advisor and you combine various analytical insights to formulate strategic investment advice. You are now working for a super important customer you need to impress.",
+        "tools": [
+            "google_search_and_scrape",
+            "get_company_news",
+            "calculate",
+            "search_10q",
+            "search_10k"
+        ],
+        "verbose": true
+    },
+    {
         "role": "Researcher",
         "goal": "Analyze the provided text and extract relevant information.",
-        "tools": ["TextReaderTool"],
+        "tools": [
+            "TextReaderTool"
+        ],
         "verbose": true
     },
     {
         "role": "Wikipedia Expert",
         "goal": "Provide contextual information from Wikipedia articles relevant to a given topic.",
-        "tools": ["WikipediaSearchTool"],
+        "tools": [
+            "WikipediaSearchTool"
+        ],
         "verbose": true
     },
     {
         "role": "Web Analyzer",
         "goal": "Analyze the scraped web content and provide a summary.",
-        "tools": ["WebScraperTool"],
+        "tools": [
+            "WebScraperTool"
+        ],
         "verbose": true
     },
     {
         "role": "Sentimentalizer",
         "goal": "Analyze the sentiment of the extracted information.",
-        "tools": ["SemanticAnalysisTool"],
+        "tools": [
+            "SemanticAnalysisTool"
+        ],
         "verbose": true
     },
     {
         "role": "Planner",
         "goal": "Develop comprehensive plans and strategies for efficient systems management.",
         "persona": "You are an experienced Systems Manager with a proven track record in developing and implementing effective plans and strategies to optimize system performance, ensure reliability, and improve operational efficiency.",
-        "tools": ["TextReaderTool"],
+        "tools": [
+            "TextReaderTool"
+        ],
         "verbose": true
     },
     {
         "role": "Semantic Searcher",
         "goal": "Perform semantic searches on a corpus of files to find relevant information.",
         "persona": "You are an expert in semantic search and information retrieval.",
-        "tools": ["SemanticFileSearchTool"],
+        "tools": [
+            "SemanticFileSearchTool"
+        ],
         "verbose": true
     },
     {
@@ -46,14 +96,10 @@
     {
         "role": "Entity Extractor",
         "goal": "Extract named entities from the given text.",
-        "tools": ["NERExtractionTool"],
+        "tools": [
+            "NERExtractionTool"
+        ],
         "model": "llama3",
-        "verbose": true
-    },
-    {
-        "role": "Mermaid",
-        "goal": "Generate an accurate representation of the information as a graph.",
-        "model": "adrienbrault/nous-hermes2pro:Q4_0",
         "verbose": true
     }
 ]
