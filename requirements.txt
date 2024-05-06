@@ -15,3 +15,4 @@ logfire
 sec_api
 unstructured
 sentence_transformers
+faiss-cpu
