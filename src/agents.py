@@ -36,6 +36,7 @@ class Agent(BaseModel):
     interactions: List[Dict] = []
     client: str = "ollama"
     tool_objects: Dict[str, Any] = {}
+    input_messages: List[Dict] = []
 
     def __init__(self, **data: Any):
         super().__init__(**data)
@@ -55,12 +56,11 @@ class Agent(BaseModel):
                 raise ValueError(f"Tool '{tool_name}' not found.")
         return tool_objects
 
-    def execute(self, context: Optional[str] = None) -> str:
+    def execute(self) -> str:
         messages = []
         if self.persona and self.verbose:
             messages.append({"role": "system", "content": f"Background: {self.persona}"})
         messages.append({"role": "system", "content": f"You are a {self.role} with the goal: {self.goal}."})
-        # Check if the agent has available tools
         # Check if the agent has available tools
         if self.tool_objects:
             #print(self.tool_objects)
@@ -83,8 +83,8 @@ class Agent(BaseModel):
                     tool_schemas.append(tool_schema)
 
             # Append the tool schemas to the system prompt within <tools></tools> tags
-            system_prompt = "You are a function calling AI model. You are provided with function signatures within <tools></tools> XML tags. You may call one or more functions to assist with the user query. Don't make assumptions about what values to plug into functions"
-            system_prompt += f"Here are the available tools:\n<tools>\n{json.dumps(tool_schemas, indent=2)}\n</tools>"
+            system_prompt = "You are a function calling AI model. You are provided with function signatures within <tools></tools> XML tags. You may call one or more functions to assist with the user query. Don't make assumptions about what values to plug into functions."
+            system_prompt += f"\nHere are the available tools:\n<tools>\n{json.dumps(tool_schemas, indent=2)}\n</tools>\n"
             system_prompt += """
 Use the following pydantic model json schema for each tool call you will make: {"properties": {"arguments": {"title": "Arguments", "type": "object"}, "name": {"title": "Name", "type": "string"}}, "required": ["arguments", "name"], "title": "FunctionCall", "type": "object"}
 Please use <scratchpad></scratchpad> XML tags to record your reasoning and planning before you call the functions as follows:
@@ -97,14 +97,13 @@ For each function call return a json object with function name and arguments wit
 </tool_call>
 """
             messages.append({"role": "system", "content": system_prompt})
-
-        
+            if self.input_messages:
+                input_content = "\n".join([f"<{input_message['role']}>\n{input_message['content']}\n</{input_message['role']}>" for input_message in self.input_messages])
+                messages.append({"role": "system", "content": f"Input from other agents:\n{input_content}"})
 
         try:
             depth = 0
             messages.append({"role": "user", "content": f"Your task is to {self.goal}."})
-            if context:
-                messages.append({"role": "assistant", "content": f"Context:\n{context}"})
             completion = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -112,6 +111,7 @@ For each function call return a json object with function name and arguments wit
 
             def recursive_loop(prompt, completion, depth):
                 result = completion.choices[0].message.content
+                prompt.append({"role": "assistant", "content": result})
                 print(result)
 
                 # Process the agent's response and extract tool calls
@@ -122,7 +122,7 @@ For each function call return a json object with function name and arguments wit
                         inference_logger.info(f"parsed tool calls:\n{json.dumps(tool_calls, indent=2)}")
 
                         # Execute the tool calls
-                        tool_message = f"Agent iteration {depth} to assist with user query: {self.goal}\n"
+                        tool_message = f"Sub-agent iteration {depth} to assist with user query: {self.goal}\n"
                         if tool_calls:
                             for tool_call in tool_calls:
                                 tool_name = tool_call.get("name")
