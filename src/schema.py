@@ -10,6 +10,7 @@ class Agent(BaseModel):
     persona: str
     tools: List[str] = Field(..., alias="tools")
     verbose: bool
+    dependencies: List[str] = Field(..., description= "directed edges to this agent")
 
 class FunctionCall(BaseModel):
     arguments: dict
