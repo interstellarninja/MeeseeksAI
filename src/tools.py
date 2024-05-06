@@ -1,16 +1,17 @@
+import os
 import ast
 import re
 import inspect
 import sys
-import types
 import requests
 import pandas as pd
 import yfinance as yf
 import concurrent.futures
 
+from sec_api import QueryApi
 from typing import List
 from bs4 import BeautifulSoup
-from src.utils import inference_logger
+from src.utils import embedding_search, inference_logger
 from langchain.tools import tool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
@@ -64,6 +65,15 @@ def code_interpreter(code_markdown: str) -> dict | str:
         error_message = f"An error occurred: {e}"
         inference_logger.error(error_message)
         return error_message
+    
+@tool("Make a calculation")
+def calculate(operation):
+    """Useful to perform any mathematical calculations, 
+    like sum, minus, multiplication, division, etc.
+    The input to this tool should be a mathematical 
+    expression, a couple examples are `200*7` or `5000/2*10`
+    """
+    return eval(operation)
 
 @tool
 def google_search_and_scrape(query: str) -> dict:
@@ -248,6 +258,7 @@ def get_dividend_data(symbol: str) -> pd.DataFrame:
 def get_company_news(symbol: str) -> pd.DataFrame:
     """
     Get company news and press releases for a given stock symbol.
+    This function returns titles and url which need further scraping using other tools.
 
     Args:
     symbol (str): The stock symbol.
@@ -299,6 +310,68 @@ def get_company_profile(symbol: str) -> dict:
         return {
 
         }
+    
+@tool("Search 10-Q form")
+def search_10q(data):
+    """
+    Useful to search information from the latest 10-Q form for a
+    given stock.
+    The input to this tool should be a pipe (|) separated text of
+    length two, representing the stock ticker you are interested and what
+    question you have from it.
+		For example, `AAPL|what was last quarter's revenue`.
+    """
+    stock, ask = data.split("|")
+    queryApi = QueryApi(api_key=os.environ['SEC_API_API_KEY'])
+    query = {
+      "query": {
+        "query_string": {
+          "query": f"ticker:{stock} AND formType:\"10-Q\""
+        }
+      },
+      "from": "0",
+      "size": "1",
+      "sort": [{ "filedAt": { "order": "desc" }}]
+    }
+
+    fillings = queryApi.get_filings(query)['filings']
+    if len(fillings) == 0:
+      return "Sorry, I couldn't find any filling for this stock, check if the ticker is correct."
+    link = fillings[0]['linkToFilingDetails']
+    inference_logger.info(f"Running embedding search on {link}")
+    answer = embedding_search(link, ask)
+    return answer
+
+@tool("Search 10-K form")
+def search_10k(data):
+    """
+    Useful to search information from the latest 10-K form for a
+    given stock.
+    The input to this tool should be a pipe (|) separated text of
+    length two, representing the stock ticker you are interested, what
+    question you have from it.
+    For example, `AAPL|what was last year's revenue`.
+    """
+    stock, ask = data.split("|")
+    queryApi = QueryApi(api_key=os.environ['SEC_API_API_KEY'])
+    query = {
+      "query": {
+        "query_string": {
+          "query": f"ticker:{stock} AND formType:\"10-K\""
+        }
+      },
+      "from": "0",
+      "size": "1",
+      "sort": [{ "filedAt": { "order": "desc" }}]
+    }
+
+    fillings = queryApi.get_filings(query)['filings']
+    if len(fillings) == 0:
+      return "Sorry, I couldn't find any filling for this stock, check if the ticker is correct."
+    link = fillings[0]['linkToFilingDetails']
+    inference_logger.info(f"Running embedding search on {link}")
+    answer = embedding_search(link, ask)
+    return answer
     
 def get_function_names():
     current_module = sys.modules[__name__]
