@@ -2,7 +2,6 @@ openai
 PyYAML
 requests
 bs4
-python-dateutil
 tiktoken
 pandas
 yfinance
@@ -10,7 +9,9 @@ PyPDF2
 textblob
 gpt4all
 spacy
-pickle5
-hashlib
 groq
 python-dotenv
+logfire
+sec_api
+unstructured
+sentence_transformers
