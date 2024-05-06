@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 import requests
 
 from langchain.text_splitter import CharacterTextSplitter
-from sentence_transformers import SentenceTransformer
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from unstructured.partition.html import partition_html
 
@@ -126,22 +126,34 @@ def extract_json_from_markdown(text):
         print("JSON string not found in the text.")
     return None
 
-def embedding_search(url, ask):
+def embedding_search(url, query):
     text = download_form_html(url)
     elements = partition_html(text=text)
     content = "\n".join([str(el) for el in elements])
     text_splitter = CharacterTextSplitter(
-        separator="\n", chunk_size=1000, chunk_overlap=150, length_function=len, is_separator_regex=False,
+        separator="\n",
+        chunk_size=1000,
+        chunk_overlap=150,
+        length_function=len,
+        is_separator_regex=False,
     )
     docs = text_splitter.create_documents([content])
-    
+
     # Load a pre-trained sentence transformer model
-    embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-    
-    retriever = FAISS.from_documents(docs, embedding_model).as_retriever()
-    answers = retriever.get_relevant_documents(ask, top_k=4)
-    answers = "\n\n".join([a.page_content for a in answers])
-    return answers
+    embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+    # Create FAISS index and retriever
+    index = FAISS.from_documents(docs, embedding_model)
+    retriever = index.as_retriever()
+
+    answers = retriever.invoke(query, top_k=4)
+    chunks = []
+    for i, doc in enumerate(answers):
+        chunk = f"\n<chunk index={i}>\n{doc.page_content}\n</chunk>\n"
+        chunks.append(chunk)
+
+    result = "".join(chunks)
+    return f"<documents>\n{result}</documents>"
 
 def download_form_html(url):
     headers = {
