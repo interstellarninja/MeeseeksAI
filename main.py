@@ -13,7 +13,6 @@ from src.prompter import PromptManager
 from src.resources import Resource
 from src.agents import Agent
 from src.clients import CLIENTS
-from src.utils import get_tool_names
 from src.tools import get_openai_tools
 
 import logfire
@@ -40,29 +39,55 @@ class AgentOrchestrator:
             agent_role = agent_data["role"]
             G.add_node(agent_role, **agent_data)
 
-        execution_order = list(nx.topological_sort(G))
+        # Add edges to the graph based on the dependencies
+        for agent_data in agents_metadata:
+            agent_role = agent_data["role"]
+            dependencies = agent_data.get("dependencies", [])
+            for dependency in dependencies:
+                G.add_edge(dependency, agent_role)
 
-        context = ""
-        for agent_role in execution_order:
-            agent_data = G.nodes[agent_role]
-            agent = Agent(**agent_data)
+        # Create a dictionary to store the output of each agent
+        agent_outputs = {}
 
-            if agent.verbose:
-                print(f"Starting Agent: {agent.role}")
+        # Iterate over the edges of the graph
+        for source_role, target_role in G.edges():
+            # Check if the source agent's output is available
+            if source_role in agent_outputs:
+                source_output = agent_outputs[source_role]
+            else:
+                # If the source agent's output is not available, execute the source agent
+                source_data = G.nodes[source_role]
+                source_agent = Agent(**source_data)
+                if source_agent.verbose:
+                    print(f"Starting Agent: {source_agent.role}")
+                source_output = source_agent.execute()
+                if source_agent.verbose:
+                    print(f"Agent output:\n{source_output}\n")
+                agent_outputs[source_role] = source_output
+                self.llama_logs.extend(source_agent.interactions)
 
-            output = agent.execute(context=context)
+            # Prepare the input messages for the target agent
+            input_messages = [{"role": source_role, "content": source_output}]
 
-            if agent.verbose:
-                print(f"Agent output:\n{output}\n")
+            # Execute the target agent with the source agent's output as input
+            target_data = G.nodes[target_role]
+            target_agent = Agent(**target_data)
+            target_agent.input_messages = input_messages
+            if target_agent.verbose:
+                print(f"Starting Agent: {target_agent.role}")
+            target_output = target_agent.execute()
+            if target_agent.verbose:
+                print(f"Agent output:\n{target_output}\n")
+            agent_outputs[target_role] = target_output
+            self.llama_logs.extend(target_agent.interactions)
 
-            context += f"Agent: {agent.role}\nGoal: {agent.goal}\nOutput:\n{output}\n\n"
-
-            self.llama_logs.extend(agent.interactions)
+        # Collect the final output from all the agents
+        final_output = "\n".join([f"Agent: {role}\nGoal: {G.nodes[role]['goal']}\nOutput:\n{output}\n" for role, output in agent_outputs.items()])
 
         self.save_logs()
         self.save_llama_logs()
 
-        return context
+        return final_output
 
     def load_or_generate_graph(self, query, agents, tools, resources):
         mermaid_graph_file = "mermaid_graph.txt"
