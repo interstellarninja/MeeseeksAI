@@ -311,7 +311,7 @@ def get_company_profile(symbol: str) -> dict:
 
         }
     
-@tool("Search 10-Q form")
+@tool
 def search_10q(data):
     """
     Useful to search information from the latest 10-Q form for a
@@ -342,7 +342,7 @@ def search_10q(data):
     answer = embedding_search(link, ask)
     return answer
 
-@tool("Search 10-K form")
+@tool
 def search_10k(data):
     """
     Useful to search information from the latest 10-K form for a
