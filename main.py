@@ -4,8 +4,6 @@ import json
 import uuid
 import argparse
 import networkx as nx
-from typing import Any, Dict, List, Optional
-from openai import OpenAI
 from datetime import datetime
 
 from src.rag_tools import *
@@ -49,37 +47,30 @@ class AgentOrchestrator:
         # Create a dictionary to store the output of each agent
         agent_outputs = {}
 
-        # Iterate over the edges of the graph
-        for source_role, target_role in G.edges():
-            # Check if the source agent's output is available
-            if source_role in agent_outputs:
-                source_output = agent_outputs[source_role]
-            else:
-                # If the source agent's output is not available, execute the source agent
-                source_data = G.nodes[source_role]
-                source_agent = Agent(**source_data)
-                if source_agent.verbose:
-                    print(f"Starting Agent: {source_agent.role}")
-                source_output = source_agent.execute()
-                if source_agent.verbose:
-                    print(f"Agent output:\n{source_output}\n")
-                agent_outputs[source_role] = source_output
-                self.llama_logs.extend(source_agent.interactions)
+        # Execute agents in topological order (respecting dependencies)
+        for agent_role in nx.topological_sort(G):
+            agent_data = G.nodes[agent_role]
+            agent = Agent(**agent_data)
 
-            # Prepare the input messages for the target agent
-            input_messages = [{"role": source_role, "content": source_output}]
+            if agent.verbose:
+                print(f"Starting Agent: {agent.role}")
 
-            # Execute the target agent with the source agent's output as input
-            target_data = G.nodes[target_role]
-            target_agent = Agent(**target_data)
-            target_agent.input_messages = input_messages
-            if target_agent.verbose:
-                print(f"Starting Agent: {target_agent.role}")
-            target_output = target_agent.execute()
-            if target_agent.verbose:
-                print(f"Agent output:\n{target_output}\n")
-            agent_outputs[target_role] = target_output
-            self.llama_logs.extend(target_agent.interactions)
+            # Prepare the input messages for the agent
+            input_messages = []
+            for predecessor in G.predecessors(agent_role):
+                if predecessor in agent_outputs:
+                    input_messages.append({"role": predecessor, "content": agent_outputs[predecessor]})
+
+            agent.input_messages = input_messages
+
+            # Execute the agent
+            output = agent.execute()
+
+            if agent.verbose:
+                print(f"Agent output:\n{output}\n")
+
+            agent_outputs[agent_role] = output
+            self.llama_logs.extend(agent.interactions)
 
         # Collect the final output from all the agents
         final_output = "\n".join([f"Agent: {role}\nGoal: {G.nodes[role]['goal']}\nOutput:\n{output}\n" for role, output in agent_outputs.items()])
@@ -88,7 +79,7 @@ class AgentOrchestrator:
         self.save_llama_logs()
 
         return final_output
-
+    
     def load_or_generate_graph(self, query, agents, tools, resources):
         mermaid_graph_file = "mermaid_graph.txt"
         agent_metadata_file = "agent_metadata.json"
@@ -114,17 +105,15 @@ class AgentOrchestrator:
         prompter = PromptManager()
         sys_prompt = prompter.generate_prompt(tools, agents, resources)
 
-        client = CLIENTS.anthropic
-        response = client.messages.create(
-            model="claude-3-opus-20240229",
-            system=sys_prompt,
-            max_tokens=1000,
-            temperature=0.5,
-            messages=chat,
+        response = CLIENTS.chat_completion(
+            client="anthropic",
+            messages=[
+                {"role": "system", "content": sys_prompt},
+                *chat
+            ]
         )
         print(response)
-        completion = response.content[0].text
-        return completion
+        return response
 
     def extract_agents_from_mermaid(self, mermaid_graph):
         graph_content = re.search(r'<graph>(.*?)</graph>', mermaid_graph, re.DOTALL).group(1)
