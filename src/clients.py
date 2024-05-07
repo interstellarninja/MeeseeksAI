@@ -18,5 +18,45 @@ class Clients:
         self.anthropic = Anthropic(
             api_key=os.getenv("ANTHROPIC_API_KEY")
         )
+        self.lmstudio = OpenAI(
+            base_url="http://localhost:1234/v1", 
+            api_key="lm-studio"
+        )
+
+    def chat_completion(self, client, messages):
+        if client == "ollama":
+            response = self.ollama.chat.completions.create(
+                model=os.getenv("OLLAMA_MODEL"),
+                messages=messages,
+            )
+            completion = response.choices[0].message.content
+        elif client == "anthropic":
+            response = self.anthropic.messages.create(
+                model=os.getenv("ANTHROPIC_MODEL"),
+                max_tokens=1000,
+                temperature=0.5,
+                messages=messages,
+            )
+            completion = response.content[0].text
+            
+        elif client == "groq":
+            response = self.groq.chat.completions.create(
+                model=os.getenv("GROQ_MODEL"),
+                messages=messages,
+            )
+            completion = response.choices[0].message.content
+            
+
+        elif client == "lmstudio":
+            response = self.lmstudio.chat.completions.create(
+                model=os.getenv("LMSTUDIO_MODEL"),
+                messages=messages,
+                temperature=0.7,
+            )
+            completion = response.choices[0].message.content
+        else:
+            raise ValueError(f"Unsupported client: {client}")
+        
+        return completion
 
 CLIENTS = Clients()
