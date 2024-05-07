@@ -69,38 +69,41 @@ def validate_and_extract_tool_calls(assistant_content):
         root = ET.fromstring(xml_root_element)
 
         # extract JSON data
-        for element in root.findall(".//tool_call"):
-            json_data = None
-            try:
-                json_text = element.text.strip()
-
+        tool_call_elements = root.findall(".//tool_call")
+        if not tool_call_elements:
+            error_message = None
+        else:
+            for element in tool_call_elements:
+                json_data = None
                 try:
-                    # Prioritize json.loads for better error handling
-                    json_data = json.loads(json_text)
-                except json.JSONDecodeError as json_err:
-                    try:
-                        # Fallback to ast.literal_eval if json.loads fails
-                        json_data = ast.literal_eval(json_text)
-                    except (SyntaxError, ValueError) as eval_err:
-                        error_message = f"JSON parsing failed with both json.loads and ast.literal_eval:\n"\
-                                        f"- JSON Decode Error: {json_err}\n"\
-                                        f"- Fallback Syntax/Value Error: {eval_err}\n"\
-                                        f"- Problematic JSON text: {json_text}"
-                        inference_logger.error(error_message)
-                        continue
-            except Exception as e:
-                error_message = f"Cannot strip text: {e}"
-                inference_logger.error(error_message)
+                    json_text = element.text.strip()
 
-            if json_data is not None:
-                tool_calls.append(json_data)
-                validation_result = True
+                    try:
+                        # Prioritize json.loads for better error handling
+                        json_data = json.loads(json_text)
+                    except json.JSONDecodeError as json_err:
+                        try:
+                            # Fallback to ast.literal_eval if json.loads fails
+                            json_data = ast.literal_eval(json_text)
+                        except (SyntaxError, ValueError) as eval_err:
+                            error_message = f"JSON parsing failed with both json.loads and ast.literal_eval:\n"\
+                                            f"- JSON Decode Error: {json_err}\n"\
+                                            f"- Fallback Syntax/Value Error: {eval_err}\n"\
+                                            f"- Problematic JSON text: {json_text}"
+                            inference_logger.error(error_message)
+                            continue
+                except Exception as e:
+                    error_message = f"Cannot strip text: {e}"
+                    inference_logger.error(error_message)
+
+                if json_data is not None:
+                    tool_calls.append(json_data)
+                    validation_result = True
 
     except ET.ParseError as err:
         error_message = f"XML Parse Error: {err}"
         inference_logger.error(f"XML Parse Error: {err}")
 
-    # Return default values if no valid data is extracted
     return validation_result, tool_calls, error_message
 
 def extract_json_from_markdown(text):
