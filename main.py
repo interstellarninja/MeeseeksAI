@@ -6,12 +6,16 @@ import argparse
 import networkx as nx
 from datetime import datetime
 
+import streamlit as st
+
 from src.rag_tools import *
 from src.prompter import PromptManager
 from src.resources import Resource
 from src.agents import Agent
 from src.clients import CLIENTS
 from src.tools import get_openai_tools
+
+from matplotlib import pyplot as plt
 
 import logfire
 
@@ -30,7 +34,7 @@ class AgentOrchestrator:
         tools_dict = {tool["function"]["name"]: tool for tool in tools}
 
         mermaid_graph, agents_metadata = self.load_or_generate_graph(query, self.agents, tools, self.resources)
-        print(mermaid_graph)
+        st.write(mermaid_graph)
 
         G = nx.DiGraph()
         for agent_data in agents_metadata:
@@ -44,6 +48,9 @@ class AgentOrchestrator:
             for dependency in dependencies:
                 G.add_edge(dependency, agent_role)
 
+        # Visualize the graph using python-mermaid
+        self.visualize_graph(G)
+
         # Create a dictionary to store the output of each agent
         agent_outputs = {}
 
@@ -53,7 +60,7 @@ class AgentOrchestrator:
             agent = Agent(**agent_data)
 
             if agent.verbose:
-                print(f"Starting Agent: {agent.role}")
+                st.write(f"Starting Agent: {agent.role}")
 
             # Prepare the input messages for the agent
             input_messages = []
@@ -67,7 +74,7 @@ class AgentOrchestrator:
             output = agent.execute()
 
             if agent.verbose:
-                print(f"Agent output:\n{output}\n")
+                st.write(f"Agent output:\n{output}\n")
 
             agent_outputs[agent_role] = output
             self.llama_logs.extend(agent.interactions)
@@ -79,6 +86,16 @@ class AgentOrchestrator:
         self.save_llama_logs()
 
         return final_output
+    
+    def visualize_graph(self, G):
+        pos = nx.spring_layout(G)
+        nx.draw(G, pos, with_labels=False, node_size=1000, node_color='lightblue', font_size=12, font_weight='bold', arrows=True)
+        labels = nx.get_node_attributes(G, 'role')
+        nx.draw_networkx_labels(G, pos, labels, font_size=12)
+        plt.axis('off')
+        plt.tight_layout()
+        st.pyplot(plt)
+        plt.close()
     
     def load_or_generate_graph(self, query, agents, tools, resources):
         mermaid_graph_file = "mermaid_graph.txt"
@@ -112,7 +129,7 @@ class AgentOrchestrator:
                 *chat
             ]
         )
-        print(response)
+        st.write(response)
         return response
 
     def extract_agents_from_mermaid(self, mermaid_graph):
@@ -148,26 +165,39 @@ def parse_args():
     return parser.parse_args()
 
 def mainflow():
-    args = parse_args()
+    st.title("Stock Market Analysis with MeeseeksAI Agents")
+    multiline_text = """
+    Try to ask it "What is the current price of Meta stock?" or "Show me the historical prices of Apple vs Microsoft stock over the past 6 months.".
+    """
 
-    file_path = os.path.join(os.getcwd())
-    with open(os.path.join(file_path, "configs/agents.json"), "r") as file:
-        agents_data = json.load(file)
-    agents = [Agent(**agent_data) for agent_data in agents_data]
+    st.markdown(multiline_text, unsafe_allow_html=True)
 
-    with open(os.path.join(file_path, "configs/resources.json"), "r") as file:
-        resources_data = json.load(file)
-    resources = [Resource(**resource_data) for resource_data in resources_data]
+    # Add customization options to the sidebar
+    st.sidebar.title('Customization')
+    additional_context = st.sidebar.text_input('Enter additional summarization context for the LLM here (i.e. write it in spanish):')
 
-    orchestrator = AgentOrchestrator(
-        agents=agents,
-        resources=resources,
-        verbose=True,
-        log_file="orchestrator_log" + datetime.now().strftime("%Y%m%d%H%M%S") + ".json"
-    )
+    # Get the user's question
+    user_question = st.text_input("Ask a question about a stock or multiple stocks:")
 
-    result = orchestrator.run(args.query)
-    print(f"Final output:\n{result}")
+    if user_question:
+        file_path = os.path.join(os.getcwd())
+        with open(os.path.join(file_path, "configs/agents.json"), "r") as file:
+            agents_data = json.load(file)
+        agents = [Agent(**agent_data) for agent_data in agents_data]
+
+        with open(os.path.join(file_path, "configs/resources.json"), "r") as file:
+            resources_data = json.load(file)
+        resources = [Resource(**resource_data) for resource_data in resources_data]
+
+        orchestrator = AgentOrchestrator(
+            agents=agents,
+            resources=resources,
+            verbose=True,
+            log_file="orchestrator_log" + datetime.now().strftime("%Y%m%d%H%M%S") + ".json"
+        )
+
+        result = orchestrator.run(user_question)
+        st.write(f"Final output:\n{result}")
 
 if __name__ == "__main__":
     mainflow()
