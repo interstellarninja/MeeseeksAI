@@ -7,9 +7,9 @@
             "search_10q",
             "search_10k",
             "get_stock_fundamentals",
-            "get_financial_statements"
-        ],
-        "verbose": true
+            "get_financial_statements",
+            "plot_price_over_time"
+        ]    
     },
     {
         "role": "Research Analyst",
@@ -18,47 +18,41 @@
         "tools": [
             "google_search_and_scrape",
             "get_company_news"
-        ],
-        "verbose": true
+        ]
     },
     {
         "role": "Investment Advisor",
         "goal": "Impress your customers with full analyses over stocks and completer investment recommendations",
         "persona": "You're the most experienced investment advisor and you combine various analytical insights to formulate strategic investment advice. You are now working for a super important customer you need to impress.",
-        "tools": [],
-        "verbose": true
+        "tools": []
     },
     {
         "role": "Researcher",
         "goal": "Analyze the provided text and extract relevant information.",
         "tools": [
             "TextReaderTool"
-        ],
-        "verbose": true
+        ]
     },
     {
         "role": "Wikipedia Expert",
         "goal": "Provide contextual information from Wikipedia articles relevant to a given topic.",
         "tools": [
             "WikipediaSearchTool"
-        ],
-        "verbose": true
+        ]
     },
     {
         "role": "Web Analyzer",
         "goal": "Analyze the scraped web content and provide a summary.",
         "tools": [
             "WebScraperTool"
-        ],
-        "verbose": true
+        ]
     },
     {
         "role": "Sentimentalizer",
         "goal": "Analyze the sentiment of the extracted information.",
         "tools": [
             "SemanticAnalysisTool"
-        ],
-        "verbose": true
+        ]
     },
     {
         "role": "Planner",
@@ -66,8 +60,7 @@
         "persona": "You are an experienced Systems Manager with a proven track record in developing and implementing effective plans and strategies to optimize system performance, ensure reliability, and improve operational efficiency.",
         "tools": [
             "TextReaderTool"
-        ],
-        "verbose": true
+        ]
     },
     {
         "role": "Semantic Searcher",
@@ -75,22 +68,18 @@
         "persona": "You are an expert in semantic search and information retrieval.",
         "tools": [
             "SemanticFileSearchTool"
-        ],
-        "verbose": true
+        ]
     },
     {
         "role": "Summarizer",
         "persona": "You are a skilled Data Analyst with a knack for distilling complex information into concise summaries.",
         "goal": "Compile a summary report based on the extracted information.",
-        "verbose": true
     },
     {
         "role": "Entity Extractor",
         "goal": "Extract named entities from the given text.",
         "tools": [
             "NERExtractionTool"
-        ],
-        "model": "llama3",
-        "verbose": true
+        ]
     }
 ]
