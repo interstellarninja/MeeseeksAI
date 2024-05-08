@@ -8,6 +8,9 @@ import pandas as pd
 import yfinance as yf
 import concurrent.futures
 
+import plotly.graph_objects as go
+import streamlit as st
+
 from sec_api import QueryApi
 from typing import List
 from bs4 import BeautifulSoup
@@ -372,7 +375,62 @@ def search_10k(data):
     inference_logger.info(f"Running embedding search on {link}")
     answer = embedding_search(link, ask)
     return answer
+
+@tool
+def get_historical_price(symbol, start_date, end_date):
+    """
+    Fetches historical stock prices for a given symbol from 'start_date' to 'end_date'.
+    - symbol (str): Stock ticker symbol.
+    - end_date (date): Typically today unless a specific end date is provided. End date MUST be greater than start date
+    - start_date (date): Set explicitly, or calculated as 'end_date - date interval' (for example, if prompted 'over the past 6 months', date interval = 6 months so start_date would be 6 months earlier than today's date). Default to '1900-01-01' if vaguely asked for historical price. Start date must always be before the current date
+    """
+
+    data = yf.Ticker(symbol)
+    hist = data.history(start=start_date, end=end_date)
+    hist = hist.reset_index()
+    hist[symbol] = hist['Close']
+    return hist[['Date', symbol]]
+
+@tool
+def plot_price_over_time(symbol, start_date, end_date):
+    """
+    Plots the historical stock prices for a given symbol over a specified date range.
+    - symbol (str): Stock ticker symbol.
+    - start_date (str): Start date for the historical data in 'YYYY-MM-DD' format.
+    - end_date (str): End date for the historical data in 'YYYY-MM-DD' format.
+    """
     
+    historical_price_df = get_historical_price(symbol, start_date, end_date)
+
+    # Create a Plotly figure
+    fig = go.Figure()
+    
+    # Add a trace for the stock symbol
+    fig.add_trace(go.Scatter(x=historical_price_df['Date'], y=historical_price_df[symbol], mode='lines+markers', name=symbol))
+    
+    # Update the layout to add titles and format axis labels
+    fig.update_layout(
+        title=f'Stock Price Over Time: {symbol}',
+        xaxis_title='Date',
+        yaxis_title='Stock Price (USD)',
+        yaxis_tickprefix='$',
+        yaxis_tickformat=',.2f',
+        xaxis=dict(
+            tickangle=-45,
+            nticks=20,
+            tickfont=dict(size=10),
+        ),
+        yaxis=dict(
+            showgrid=True,   # Enable y-axis grid lines
+            gridcolor='lightgrey',  # Set grid line color
+        ),
+        plot_bgcolor='gray',  # Set plot background to white
+        paper_bgcolor='gray',  # Set overall figure background to white
+    )
+    
+    # Show the figure
+    st.plotly_chart(fig, use_container_width=True)
+
 def get_function_names():
     current_module = sys.modules[__name__]
     module_source = inspect.getsource(current_module)
