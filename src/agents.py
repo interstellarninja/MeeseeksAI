@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Dict, List, Optional
 import uuid
 from pydantic import BaseModel, Field
 from datetime import datetime
@@ -10,6 +10,8 @@ from src.rag_tools import *
 from src.utils import inference_logger
 from src.utils import validate_and_extract_tool_calls
 from langchain.tools import StructuredTool, BaseTool
+
+from langchain_core.messages import ToolMessage
 
 class Agent(BaseModel):
     class Config:
@@ -125,6 +127,7 @@ For each function call return a json object with function name and arguments wit
                                 error_message = f"Tool '{tool_name}' not found."
                                 tool_message += f"<tool_error>\n{error_message}\n</tool_error>\n"
                         messages.append({"role": "user", "content": tool_message})
+                        #messages.append(ToolMessage(tool_message, tool_call_id=0))
                     else:
                         inference_logger.info(f"No tool calls found in the agent's response.")
                         break
@@ -132,6 +135,7 @@ For each function call return a json object with function name and arguments wit
                     inference_logger.info(f"Error parsing tool calls: {error_message}")
                     tool_message = f"<tool_error>\n{error_message}\n</tool_error>\n"
                     messages.append({"role": "user", "content": tool_message})
+                    #messages.append(ToolMessage(tool_message, tool_call_id=0))
 
                 depth += 1
             else:
