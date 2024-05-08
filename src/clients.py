@@ -19,7 +19,8 @@ class Clients:
             api_key=os.getenv("ANTHROPIC_API_KEY")
         )
         self.lmstudio = OpenAI(
-            base_url="http://localhost:1234/v1", 
+            base_url="http://localhost:1234/v1",
+            #base_url="http://192.168.1.2:1234/v1",
             api_key="lm-studio"
         )
 
@@ -30,6 +31,7 @@ class Clients:
                 messages=messages,
             )
             completion = response.choices[0].message.content
+
         elif client == "anthropic":
             response = self.anthropic.messages.create(
                 model=os.getenv("ANTHROPIC_MODEL"),
@@ -44,8 +46,7 @@ class Clients:
                 model=os.getenv("GROQ_MODEL"),
                 messages=messages,
             )
-            completion = response.choices[0].message.content
-            
+            completion = response.choices[0].message.content           
 
         elif client == "lmstudio":
             response = self.lmstudio.chat.completions.create(
