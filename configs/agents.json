@@ -73,7 +73,7 @@
     {
         "role": "Summarizer",
         "persona": "You are a skilled Data Analyst with a knack for distilling complex information into concise summaries.",
-        "goal": "Compile a summary report based on the extracted information.",
+        "goal": "Compile a summary report based on the extracted information."
     },
     {
         "role": "Entity Extractor",
