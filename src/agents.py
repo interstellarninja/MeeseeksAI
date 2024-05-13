@@ -13,6 +13,8 @@ from langchain.tools import StructuredTool, BaseTool
 
 from langchain_core.messages import ToolMessage
 
+## TODO: add default tools such as "get_user_feedback", "get_additional_context", "code_interpreter" etc.
+
 class Agent(BaseModel):
     class Config:
         arbitrary_types_allowed = True  # Allow arbitrary types
@@ -50,8 +52,7 @@ class Agent(BaseModel):
     def execute(self) -> str:
         messages = []
         if self.persona and self.verbose:
-            messages.append({"role": "system", "content": f"Background: {self.persona}"})
-        messages.append({"role": "system", "content": f"You are a {self.role} with the goal: {self.goal}."})
+            messages.append({"role": "system", "content": f"You are a {self.role} with the persona: {self.persona}."})
 
           # Check if the agent has available tools
         if self.tool_objects:
@@ -71,23 +72,23 @@ class Agent(BaseModel):
             system_prompt = "You are a function calling AI model."
             system_prompt += f"\nHere are the available tools:\n<tools>\n{json.dumps(tool_schemas, indent=2)}\n</tools>\n"
             system_prompt += """
-Please use <scratchpad></scratchpad> XML tags to record your reasoning and planning before you call the functions as follows:
+Please use <scratchpad> XML tags to record your reasoning and planning before you call the functions as follows:
 <scratchpad>
 {step-by-step reasoning}
-</scatchpad>
-For each function call return a json object with function name and arguments within <tool_call></tool_call> XML tags as follows:
+</scratchpad>
+For each function call return a json object with function name and arguments within <tool_call> XML tags as follows:
 <tool_call>
 {"arguments": <args-dict>, "name": <function-name>}
 </tool_call>
 """
-            messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "system-tool", "content": system_prompt})
 
         if self.input_messages:
             for input_message in self.input_messages:
                 role = input_message["role"]
                 content = input_message["content"]
                 inference_logger.info(f"Appending input messages from previous agent: {role}")
-                messages.append({"role": "system", "content": f"<{role}>\n{content}\n</{role}>"})
+                messages.append({"role": "system-agent", "content": f"<{role}>\n{content}\n</{role}>"})
 
         messages.append({"role": "user", "content": f"Your task is to {self.goal}."})
 
@@ -126,7 +127,8 @@ For each function call return a json object with function name and arguments wit
                             else:
                                 error_message = f"Tool '{tool_name}' not found."
                                 tool_message += f"<tool_error>\n{error_message}\n</tool_error>\n"
-                        messages.append({"role": "user", "content": tool_message})
+                        #messages.append({"role": "user", "content": tool_message})
+                        messages.append({"role": "tool", "content": tool_message})
                         #messages.append(ToolMessage(tool_message, tool_call_id=0))
                     else:
                         inference_logger.info(f"No tool calls found in the agent's response.")
@@ -134,7 +136,8 @@ For each function call return a json object with function name and arguments wit
                 elif error_message:
                     inference_logger.info(f"Error parsing tool calls: {error_message}")
                     tool_message = f"<tool_error>\n{error_message}\n</tool_error>\n"
-                    messages.append({"role": "user", "content": tool_message})
+                    #messages.append({"role": "user", "content": tool_message})
+                    messages.append({"role": "tool", "content": tool_message})
                     #messages.append(ToolMessage(tool_message, tool_call_id=0))
 
                 depth += 1
@@ -161,7 +164,9 @@ For each function call return a json object with function name and arguments wit
     def log_interaction(self, prompt, response):
         self.interactions.append({
             "role": self.role,
-            "prompt": prompt,
+            "messages": prompt,
             "response": response,
+            "agent_messages": self.input_messages,
+            "tools": self.tools,
             "timestamp": datetime.now().isoformat()
         })
