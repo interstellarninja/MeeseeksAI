@@ -64,45 +64,30 @@ def validate_and_extract_tool_calls(assistant_content):
     error_message = None
 
     try:
-        # wrap content in root element
-        xml_root_element = f"<root>{assistant_content}</root>"
-        root = ET.fromstring(xml_root_element)
+        # Use regular expression to find all <tool_call> tags and their contents
+        tool_call_pattern = r'<tool_call>(.*?)</tool_call>'
+        tool_call_matches = re.findall(tool_call_pattern, assistant_content, re.DOTALL)
 
-        # extract JSON data
-        tool_call_elements = root.findall(".//tool_call")
-        if not tool_call_elements:
+        if not tool_call_matches:
             error_message = None
         else:
-            for element in tool_call_elements:
-                json_data = None
+            for match in tool_call_matches:
+                json_text = match.strip()
+
                 try:
-                    json_text = element.text.strip()
-
-                    try:
-                        # Prioritize json.loads for better error handling
-                        json_data = json.loads(json_text)
-                    except json.JSONDecodeError as json_err:
-                        try:
-                            # Fallback to ast.literal_eval if json.loads fails
-                            json_data = ast.literal_eval(json_text)
-                        except (SyntaxError, ValueError) as eval_err:
-                            error_message = f"JSON parsing failed with both json.loads and ast.literal_eval:\n"\
-                                            f"- JSON Decode Error: {json_err}\n"\
-                                            f"- Fallback Syntax/Value Error: {eval_err}\n"\
-                                            f"- Problematic JSON text: {json_text}"
-                            inference_logger.error(error_message)
-                            continue
-                except Exception as e:
-                    error_message = f"Cannot strip text: {e}"
-                    inference_logger.error(error_message)
-
-                if json_data is not None:
+                    json_data = json.loads(json_text)
                     tool_calls.append(json_data)
                     validation_result = True
+                except json.JSONDecodeError as json_err:
+                    error_message = f"JSON parsing failed:\n"\
+                                    f"- JSON Decode Error: {json_err}\n"\
+                                    f"- Problematic JSON text: {json_text}"
+                    inference_logger.error(error_message)
+                    continue
 
-    except ET.ParseError as err:
-        error_message = f"XML Parse Error: {err}"
-        inference_logger.error(f"XML Parse Error: {err}")
+    except Exception as err:
+        error_message = f"Error during tool call extraction: {err}"
+        inference_logger.error(error_message)
 
     return validation_result, tool_calls, error_message
 
