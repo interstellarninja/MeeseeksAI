@@ -31,7 +31,6 @@ class AgentOrchestrator:
 
     def run(self, query: str) -> str:
         tools = get_openai_tools()
-        tools_dict = {tool["function"]["name"]: tool for tool in tools}
 
         mermaid_graph, agents_metadata = self.load_or_generate_graph(query, self.agents, tools, self.resources)
         st.write(mermaid_graph)
@@ -60,7 +59,9 @@ class AgentOrchestrator:
             agent = Agent(**agent_data)
 
             if agent.verbose:
-                st.write(f"Starting Agent: {agent.role}")
+                st.write(f"<font color='white'>Starting Agent: {agent.role}</font>", unsafe_allow_html=True)
+                st.write(f"<font color='purple'>Agent Persona: {agent.persona}</font>", unsafe_allow_html=True)
+                st.write(f"<font color='orange'>Agent Goal: {agent.goal}</font>", unsafe_allow_html=True)
 
             # Prepare the input messages for the agent
             input_messages = []
@@ -74,7 +75,7 @@ class AgentOrchestrator:
             output = agent.execute()
 
             if agent.verbose:
-                st.write(f"Agent output:\n{output}\n")
+                st.write(f"<font color='green'>Agent Output:\n{output}\n</font>", unsafe_allow_html=True)
 
             agent_outputs[agent_role] = output
             self.llama_logs.extend(agent.interactions)
