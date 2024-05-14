@@ -26,6 +26,7 @@ class Agent(BaseModel):
     goal: str
     tools: List[str] = []
     dependencies: Optional[List[str]] = None
+    user_feedback: bool = True
     verbose: bool = False
     model: str = Field(default_factory=lambda: os.getenv('AGENT_MODEL'))  # agent model from environment variable
     max_iter: int = 2
@@ -42,6 +43,10 @@ class Agent(BaseModel):
 
     def create_tool_objects(self) -> Dict[str, Any]:
         tool_objects = {}
+
+        if self.user_feedback:
+            self.tools.append('speak_to_the_user')
+
         for tool_name in self.tools:
             if tool_name in globals():
                 tool_objects[tool_name] = globals()[tool_name]
@@ -54,7 +59,7 @@ class Agent(BaseModel):
         if self.persona and self.verbose:
             messages.append({"role": "system", "content": f"You are a {self.role} with the persona: {self.persona}."})
 
-          # Check if the agent has available tools
+        # Check if the agent has available tools
         if self.tool_objects:
             #print(self.tool_objects)
             # Serialize the tool objects to JSON schema
@@ -81,14 +86,14 @@ For each function call return a json object with function name and arguments wit
 {"arguments": <args-dict>, "name": <function-name>}
 </tool_call>
 """
-            messages.append({"role": "system-tool", "content": system_prompt})
+            messages.append({"role": "system", "content": f"<system_tools>{system_prompt}</system_tools>"})
 
         if self.input_messages:
             for input_message in self.input_messages:
                 role = input_message["role"]
                 content = input_message["content"]
                 inference_logger.info(f"Appending input messages from previous agent: {role}")
-                messages.append({"role": "system-agent", "content": f"<{role}>\n{content}\n</{role}>"})
+                messages.append({"role": "system", "content": f"<agent_messages>\n<{role}>\n{content}\n</{role}>\n</agent_messages>"})
 
         messages.append({"role": "user", "content": f"Your task is to {self.goal}."})
 
@@ -119,6 +124,7 @@ For each function call return a json object with function name and arguments wit
                                 try:
                                     tool_args = tool_call.get("arguments", {})
                                     tool_result = tool_object._run(**tool_args) if isinstance(tool_object, BaseTool) else self.execute_function_call(tool_call)
+
                                     tool_message += f"<tool_response>\n{tool_result}\n</tool_response>\n"
                                     inference_logger.info(f"Response from tool '{tool_name}':\n{tool_result}")
                                 except Exception as e:
@@ -127,8 +133,8 @@ For each function call return a json object with function name and arguments wit
                             else:
                                 error_message = f"Tool '{tool_name}' not found."
                                 tool_message += f"<tool_error>\n{error_message}\n</tool_error>\n"
-                        #messages.append({"role": "user", "content": tool_message})
-                        messages.append({"role": "tool", "content": tool_message})
+                        messages.append({"role": "user", "content": tool_message})
+                        #messages.append({"role": "tool", "content": tool_message})
                         #messages.append(ToolMessage(tool_message, tool_call_id=0))
                     else:
                         inference_logger.info(f"No tool calls found in the agent's response.")
@@ -136,8 +142,8 @@ For each function call return a json object with function name and arguments wit
                 elif error_message:
                     inference_logger.info(f"Error parsing tool calls: {error_message}")
                     tool_message = f"<tool_error>\n{error_message}\n</tool_error>\n"
-                    #messages.append({"role": "user", "content": tool_message})
-                    messages.append({"role": "tool", "content": tool_message})
+                    messages.append({"role": "user", "content": tool_message})
+                    #messages.append({"role": "tool", "content": tool_message})
                     #messages.append(ToolMessage(tool_message, tool_call_id=0))
 
                 depth += 1
