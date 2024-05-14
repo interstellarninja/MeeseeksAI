@@ -57,7 +57,8 @@ class Agent(BaseModel):
     def execute(self) -> str:
         messages = []
         if self.persona and self.verbose:
-            messages.append({"role": "system", "content": f"You are a {self.role} with the persona: {self.persona}."})
+            current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            messages.append({"role": "system", "content": f"You are a {self.role} with the persona: {self.persona}. Current date and time: {current_datetime}"})
 
         # Check if the agent has available tools
         if self.tool_objects:
@@ -76,6 +77,7 @@ class Agent(BaseModel):
             # Append the tool schemas to the system prompt within <tools></tools> tags
             system_prompt = "You are a function calling AI model."
             system_prompt += f"\nHere are the available tools:\n<tools>\n{json.dumps(tool_schemas, indent=2)}\n</tools>\n"
+            system_prompt += f"You should call the tools provided to you sequentially\n"
             system_prompt += """
 Please use <scratchpad> XML tags to record your reasoning and planning before you call the functions as follows:
 <scratchpad>
@@ -86,7 +88,7 @@ For each function call return a json object with function name and arguments wit
 {"arguments": <args-dict>, "name": <function-name>}
 </tool_call>
 """
-            messages.append({"role": "system", "content": f"<system_tools>{system_prompt}</system_tools>"})
+            messages.append({"role": "system", "content": system_prompt})
 
         if self.input_messages:
             for input_message in self.input_messages:
@@ -105,7 +107,6 @@ For each function call return a json object with function name and arguments wit
                 messages=messages,
             )
             messages.append({"role": "assistant", "content": result})
-            print(result)
 
             # Process the agent's response and extract tool calls
             if self.tool_objects:
@@ -113,9 +114,13 @@ For each function call return a json object with function name and arguments wit
 
                 if validation and tool_calls:
                     inference_logger.info(f"Parsed tool calls:\n{json.dumps(tool_calls, indent=2)}")
+                    
+                    # Print parsed tool calls as JSON markdown in Streamlit
+                    st.markdown(f"**Parsed Tool Calls:**")
+                    st.json(tool_calls)
 
                     # Execute the tool calls
-                    tool_message = f"Sub-agent iteration {depth} to assist with user query: {self.goal}\n"
+                    tool_message = f"Sub-agent iteration {depth} to assist with user query: {self.goal}. Summarize the tool results:\n"
                     if tool_calls:
                         for tool_call in tool_calls:
                             tool_name = tool_call.get("name")
@@ -123,10 +128,17 @@ For each function call return a json object with function name and arguments wit
                             if tool_object:
                                 try:
                                     tool_args = tool_call.get("arguments", {})
+                                    
+                                    # Print invoking tool message in blue
+                                    st.markdown(f"<font color='blue'>Invoking tool: {tool_name}</font>", unsafe_allow_html=True)
+                                    
                                     tool_result = tool_object._run(**tool_args) if isinstance(tool_object, BaseTool) else self.execute_function_call(tool_call)
 
                                     tool_message += f"<tool_response>\n{tool_result}\n</tool_response>\n"
                                     inference_logger.info(f"Response from tool '{tool_name}':\n{tool_result}")
+                                    
+                                    # Print tool response in green
+                                    #st.markdown(f"<font color='green'>Tool response: {tool_result}</font>", unsafe_allow_html=True)
                                 except Exception as e:
                                     error_message = f"Error executing tool '{tool_name}': {str(e)}"
                                     tool_message += f"<tool_error>\n{error_message}\n</tool_error>\n"
