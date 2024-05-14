@@ -53,19 +53,15 @@ class AgentOrchestrator:
         # Create a dictionary to store the output of each agent
         agent_outputs = {}
 
-        # Create a container for agent outputs
-        agent_output_container = st.empty()
-
         # Execute agents in topological order (respecting dependencies)
         for agent_role in nx.topological_sort(G):
             agent_data = G.nodes[agent_role]
             agent = Agent(**agent_data)
 
             if agent.verbose:
-                with agent_output_container:
-                    st.write(f"<font color='white'>Starting Agent: {agent.role}</font>", unsafe_allow_html=True)
-                    st.write(f"<font color='purple'>Agent Persona: {agent.persona}</font>", unsafe_allow_html=True)
-                    st.write(f"<font color='orange'>Agent Goal: {agent.goal}</font>", unsafe_allow_html=True)
+                st.write(f"<font color='white'>Starting Agent: {agent.role}</font>", unsafe_allow_html=True)
+                st.write(f"<font color='purple'>Agent Persona: {agent.persona}</font>", unsafe_allow_html=True)
+                st.write(f"<font color='orange'>Agent Goal: {agent.goal}</font>", unsafe_allow_html=True)
 
             # Prepare the input messages for the agent
             input_messages = []
@@ -79,8 +75,7 @@ class AgentOrchestrator:
             output = agent.execute()
 
             if agent.verbose:
-                with agent_output_container:
-                    st.write(f"<font color='green'>Agent Output:\n{output}\n</font>", unsafe_allow_html=True)
+                st.write(f"<font color='green'>Agent Output:\n{output}\n</font>", unsafe_allow_html=True)
 
             agent_outputs[agent_role] = output
             self.llama_logs.extend(agent.interactions)
@@ -171,7 +166,7 @@ def parse_args():
     return parser.parse_args()
 
 def mainflow():
-    st.title("Stock Market Analysis with MeeseeksAI Agents")
+    st.title("Stock Analysis with MeeseeksAI Agents")
     multiline_text = """
     Try to ask it "What is the current price of Meta stock?" or "Show me the historical prices of Apple vs Microsoft stock over the past 6 months.".
     """
@@ -202,8 +197,26 @@ def mainflow():
             log_file="orchestrator_log" + datetime.now().strftime("%Y%m%d%H%M%S") + ".json"
         )
 
-        result = orchestrator.run(user_question)
-        st.write(f"Final output:\n{result}")
+        orchestrator.run(user_question)
+        
+        ## Wrap the final output in a scrollable container
+        #output_container = st.container()
+        #with output_container:
+        #    st.write(f"Final output:\n{result}")
+        #
+        ## Make the output container scrollable
+        #output_container_height = min(len(result.split('\n')) * 30, 500)  # Adjust the height based on the number of lines
+        #output_container.markdown(
+        #    f"""
+        #    <style>
+        #        .stContainer {{
+        #            max-height: {output_container_height}px;
+        #            overflow-y: auto;
+        #        }}
+        #    </style>
+        #    """,
+        #    unsafe_allow_html=True
+        #)
 
 if __name__ == "__main__":
     mainflow()
