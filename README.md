@@ -4,5 +4,5 @@ Added CLI based interaction over a config.json file
 
    Example:
    ```
-   python main.py --config path/to/config.json --verbose
+ streamlit run main.py
    ```
