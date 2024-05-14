@@ -53,15 +53,19 @@ class AgentOrchestrator:
         # Create a dictionary to store the output of each agent
         agent_outputs = {}
 
+        # Create a container for agent outputs
+        agent_output_container = st.empty()
+
         # Execute agents in topological order (respecting dependencies)
         for agent_role in nx.topological_sort(G):
             agent_data = G.nodes[agent_role]
             agent = Agent(**agent_data)
 
             if agent.verbose:
-                st.write(f"<font color='white'>Starting Agent: {agent.role}</font>", unsafe_allow_html=True)
-                st.write(f"<font color='purple'>Agent Persona: {agent.persona}</font>", unsafe_allow_html=True)
-                st.write(f"<font color='orange'>Agent Goal: {agent.goal}</font>", unsafe_allow_html=True)
+                with agent_output_container:
+                    st.write(f"<font color='white'>Starting Agent: {agent.role}</font>", unsafe_allow_html=True)
+                    st.write(f"<font color='purple'>Agent Persona: {agent.persona}</font>", unsafe_allow_html=True)
+                    st.write(f"<font color='orange'>Agent Goal: {agent.goal}</font>", unsafe_allow_html=True)
 
             # Prepare the input messages for the agent
             input_messages = []
@@ -75,7 +79,8 @@ class AgentOrchestrator:
             output = agent.execute()
 
             if agent.verbose:
-                st.write(f"<font color='green'>Agent Output:\n{output}\n</font>", unsafe_allow_html=True)
+                with agent_output_container:
+                    st.write(f"<font color='green'>Agent Output:\n{output}\n</font>", unsafe_allow_html=True)
 
             agent_outputs[agent_role] = output
             self.llama_logs.extend(agent.interactions)
