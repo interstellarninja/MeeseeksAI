@@ -19,6 +19,21 @@ from langchain.tools import tool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 @tool
+def speak_to_the_user(message: str) -> str:
+    """
+    Prompts the user to provide more context or feedback through the terminal or Streamlit interface.
+
+    Args:
+        prompt (str): The prompt or question to ask the user.
+
+    Returns:
+        str: The user's response to the prompt.
+    """
+    st.write(message)
+    user_input = st.text_input("Please provide your response:")
+    return user_input
+
+@tool
 def code_interpreter(code_markdown: str) -> dict | str:
     """
     Execute the provided Python code string on the terminal using exec.
