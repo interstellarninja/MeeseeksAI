@@ -3,7 +3,6 @@ from openai import OpenAI
 from anthropic import Anthropic
 from groq import Groq
 from dotenv import load_dotenv
-from src.inference import ModelInference
 
 load_dotenv(".env")
 
@@ -24,10 +23,8 @@ class Clients:
             #base_url="http://192.168.1.2:1234/v1",
             api_key="lm-studio"
         )
-        self.localllama = ModelInference(
-            model_path=os.getenv("LOCAL_MODEL_PATH"),
-            load_in_4bit=os.getenv("LOAD_IN_4BIT", "False")
-        )
+        self.localllama_model_path = os.getenv("LOCAL_MODEL_PATH")
+        self.localllama_load_in_4bit = os.getenv("LOAD_IN_4BIT", "False")
 
     def chat_completion(self, client, messages):
         if client == "ollama":
@@ -62,6 +59,11 @@ class Clients:
             completion = response.choices[0].message.content
             
         elif client == "localllama":
+            from src.inference import ModelInference
+            self.localllama = ModelInference(
+                model_path=self.localllama_model_path,
+                load_in_4bit=self.localllama_load_in_4bit
+            )
             completion = self.localllama.run_inference(messages)
             
         else:
