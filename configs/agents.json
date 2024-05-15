@@ -7,9 +7,7 @@
             "search_10q",
             "search_10k",
             "get_stock_fundamentals",
-            "get_financial_statements",
-            "plot_price_over_time"
-        ]    
+            "get_financial_statements"        ]    
     },
     {
         "role": "Research Analyst",
@@ -27,59 +25,8 @@
         "tools": []
     },
     {
-        "role": "Researcher",
-        "goal": "Analyze the provided text and extract relevant information.",
-        "tools": [
-            "TextReaderTool"
-        ]
-    },
-    {
-        "role": "Wikipedia Expert",
-        "goal": "Provide contextual information from Wikipedia articles relevant to a given topic.",
-        "tools": [
-            "WikipediaSearchTool"
-        ]
-    },
-    {
-        "role": "Web Analyzer",
-        "goal": "Analyze the scraped web content and provide a summary.",
-        "tools": [
-            "WebScraperTool"
-        ]
-    },
-    {
-        "role": "Sentimentalizer",
-        "goal": "Analyze the sentiment of the extracted information.",
-        "tools": [
-            "SemanticAnalysisTool"
-        ]
-    },
-    {
-        "role": "Planner",
-        "goal": "Develop comprehensive plans and strategies for efficient systems management.",
-        "persona": "You are an experienced Systems Manager with a proven track record in developing and implementing effective plans and strategies to optimize system performance, ensure reliability, and improve operational efficiency.",
-        "tools": [
-            "TextReaderTool"
-        ]
-    },
-    {
-        "role": "Semantic Searcher",
-        "goal": "Perform semantic searches on a corpus of files to find relevant information.",
-        "persona": "You are an expert in semantic search and information retrieval.",
-        "tools": [
-            "SemanticFileSearchTool"
-        ]
-    },
-    {
         "role": "Summarizer",
         "persona": "You are a skilled Data Analyst with a knack for distilling complex information into concise summaries.",
         "goal": "Compile a summary report based on the extracted information."
-    },
-    {
-        "role": "Entity Extractor",
-        "goal": "Extract named entities from the given text.",
-        "tools": [
-            "NERExtractionTool"
-        ]
     }
 ]
