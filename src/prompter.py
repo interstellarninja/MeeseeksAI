@@ -14,7 +14,7 @@ class PromptSchema(BaseModel):
     Objective: str
     Agents: str
     Tools: str
-    Resources: str
+    #Resources: str
     Examples: str
     Schema: str
     Instructions: str 
@@ -45,7 +45,7 @@ class PromptManager:
             Objective=yaml_content.get('Objective', ''),
             Agents=yaml_content.get('Agents', ''),
             Tools=yaml_content.get('Tools', ''),
-            Resources=yaml_content.get('Resources', ''),
+            #Resources=yaml_content.get('Resources', ''),
             Examples=yaml_content.get('Examples', ''),
             Schema=yaml_content.get('Schema', ''),
             Instructions=yaml_content.get('Instructions', ''),
@@ -69,7 +69,7 @@ class PromptManager:
             "date": datetime.date.today(),
             "agents": agents,
             "tools": tools,
-            "resources": resources,
+            "resources": None,
             "examples": examples,
             "schema": schema_json
         }
