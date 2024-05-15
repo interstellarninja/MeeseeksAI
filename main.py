@@ -1,7 +1,6 @@
 import os
 import re
 import json
-import uuid
 import argparse
 import networkx as nx
 from datetime import datetime
@@ -13,16 +12,18 @@ from src.prompter import PromptManager
 from src.resources import Resource
 from src.agents import Agent
 from src.clients import CLIENTS
-from src.tools import get_openai_tools
+from src.tools import get_openai_tools, get_function_names
+from src.utils import inference_logger
 
 from matplotlib import pyplot as plt
 
 import logfire
 
 class AgentOrchestrator:
-    def __init__(self, agents: List['Agent'], resources: List['Resource'], verbose: bool = False, log_file: str = "orchestrator_log.json"):
-        self.id = str(uuid.uuid4())
+    def __init__(self, agents: List['Agent'], agents_config, resources: List['Resource'], verbose: bool = False, log_file: str = "orchestrator_log.json"):
+        self.client = os.getenv('ORCHESTRATOR_CLIENT')
         self.agents = agents
+        self.agents_config = agents_config
         self.resources = resources
         self.verbose = verbose
         self.log_file = log_file
@@ -30,9 +31,17 @@ class AgentOrchestrator:
         self.llama_logs = []
 
     def run(self, query: str) -> str:
-        tools = get_openai_tools()
+        #tools = get_openai_tools()
+        tools = get_function_names()
 
-        mermaid_graph, agents_metadata = self.load_or_generate_graph(query, self.agents, tools, self.resources)
+        tool_descriptions = []
+        for tool in tools:
+            tool_descriptions.append({
+                "name": tool.name,
+                "description": tool.description
+            })
+            
+        mermaid_graph, agents_metadata = self.load_or_generate_graph(query, self.agents_config, tool_descriptions, self.resources)
         st.write(mermaid_graph)
 
         G = nx.DiGraph()
@@ -59,7 +68,7 @@ class AgentOrchestrator:
             agent = Agent(**agent_data)
 
             if agent.verbose:
-                st.write(f"<font color='white'>Starting Agent: {agent.role}</font>", unsafe_allow_html=True)
+                st.write(f"Starting Agent: <font color='white'>{agent.role}</font>", unsafe_allow_html=True)
                 st.write(f"<font color='purple'>Agent Persona: {agent.persona}</font>", unsafe_allow_html=True)
                 st.write(f"<font color='orange'>Agent Goal: {agent.goal}</font>", unsafe_allow_html=True)
 
@@ -123,19 +132,35 @@ class AgentOrchestrator:
         prompter = PromptManager()
         sys_prompt = prompter.generate_prompt(tools, agents, resources)
 
+        #response = CLIENTS.chat_completion(
+        #    client="anthropic",
+        #    messages=[
+        #        {"role": "system", "content": sys_prompt},
+        #        *chat
+        #    ]
+        #)
+        inference_logger.info(f"Running inference with {self.client}")
         response = CLIENTS.chat_completion(
-            client="anthropic",
+            client=self.client,
             messages=[
                 {"role": "system", "content": sys_prompt},
                 *chat
             ]
         )
+        inference_logger.info(f"Assistant Message:\n{response}")
+        inference_logger.info(response)
         st.write(response)
         return response
 
     def extract_agents_from_mermaid(self, mermaid_graph):
-        graph_content = re.search(r'<graph>(.*?)</graph>', mermaid_graph, re.DOTALL).group(1)
-        metadata_content = re.search(r'<agents>(.*?)</agents>', mermaid_graph, re.DOTALL).group(1)
+        graph_content = re.search(r'<graph>(.*?)</graph>', mermaid_graph, re.DOTALL)
+
+        if graph_content:
+            graph_content = graph_content.group(1)
+
+        metadata_content = re.search(r'<agents>(.*?)</agents>', mermaid_graph, re.DOTALL)
+        if metadata_content:
+            metadata_content = metadata_content.group(1)
 
         dependency_pattern = r'(\w+) --> (\w+)'
 
@@ -192,6 +217,7 @@ def mainflow():
 
         orchestrator = AgentOrchestrator(
             agents=agents,
+            agents_config=agents_data,
             resources=resources,
             verbose=True,
             log_file="orchestrator_log" + datetime.now().strftime("%Y%m%d%H%M%S") + ".json"
