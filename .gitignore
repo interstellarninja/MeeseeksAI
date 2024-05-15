@@ -1,0 +1,8 @@
+# Virtuel environment
+venv
+
+# Python
+*.pyc
+
+# Logs
+*.log

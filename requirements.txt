@@ -18,3 +18,5 @@ sentence_transformers
 faiss-cpu
 streamlit
 plotly
+langchain
+anthropic
