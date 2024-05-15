@@ -106,7 +106,9 @@ For each function call return a json object with function name and arguments wit
                 client=self.client,
                 messages=messages,
             )
+            inference_logger.info(f"Assistant Message:\n{result}")
             messages.append({"role": "assistant", "content": result})
+
 
             # Process the agent's response and extract tool calls
             if self.tool_objects:
