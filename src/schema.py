@@ -5,12 +5,11 @@ class Tool(BaseModel):
     name: str
 
 class Agent(BaseModel):
-    role: str
-    goal: str
-    persona: str
-    tools: List[str] = Field(..., alias="tools")
-    verbose: bool
-    dependencies: List[str] = Field(..., description= "directed edges to this agent")
+    role: str = Field(..., description="The role of the agent")
+    goal: str = Field(..., description="The goal of the agent")
+    persona: str = Field(..., description="The persona of the agent")
+    tools: List[str] = Field(..., description="tool names available to the agent; use only tools provided and do not make them up")
+    dependencies: List[str] = Field(..., description="List of agent nodes this agent depends on")
 
 class FunctionCall(BaseModel):
     arguments: dict
