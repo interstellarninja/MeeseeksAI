@@ -1,0 +1,290 @@
+[
+    {
+        "type": "function",
+        "function": {
+            "name": "speak_to_the_user",
+            "description": "speak_to_the_user(message: str) -> str - Prompts the user to provide more context or feedback through the terminal or Streamlit interface.\n\nArgs:\n    prompt (str): The prompt or question to ask the user.\n\nReturns:\n    str: The user's response to the prompt.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "message"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "code_interpreter",
+            "description": "code_interpreter(code_markdown: str) -> dict | str - Execute the provided Python code string on the terminal using exec.\n\n    The string should contain valid, executable and pure Python code in markdown syntax.\n    Code should also import any required Python packages.\n\n    Args:\n        code_markdown (str): The Python code with markdown syntax to be executed.\n            For example: ```python\n<code-string>\n```\n\n    Returns:\n        dict | str: A dictionary containing variables declared and values returned by function calls,\n            or an error message if an exception occurred.\n\n    Note:\n        Use this function with caution, as executing arbitrary code can pose security risks.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "code_markdown": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "code_markdown"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "google_search_and_scrape",
+            "description": "google_search_and_scrape(query: str) -> dict - Performs a Google search for the given query, retrieves the top search result URLs,\nand scrapes the text content and table data from those pages in parallel.\n\nArgs:\n    query (str): The search query.\nReturns:\n    list: A list of dictionaries containing the URL, text content, and table data for each scraped page.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "query"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_current_stock_price",
+            "description": "get_current_stock_price(symbol: str) -> float - Get the current stock price for a given symbol.\n\nArgs:\n  symbol (str): The stock symbol.\n\nReturns:\n  float: The current stock price, or None if an error occurs.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "symbol"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_stock_fundamentals",
+            "description": "get_stock_fundamentals(symbol: str) -> dict - Get fundamental data for a given stock symbol using yfinance API.\n\nArgs:\n    symbol (str): The stock symbol.\n\nReturns:\n    dict: A dictionary containing fundamental data.\n        Keys:\n            - 'symbol': The stock symbol.\n            - 'company_name': The long name of the company.\n            - 'sector': The sector to which the company belongs.\n            - 'industry': The industry to which the company belongs.\n            - 'market_cap': The market capitalization of the company.\n            - 'pe_ratio': The forward price-to-earnings ratio.\n            - 'pb_ratio': The price-to-book ratio.\n            - 'dividend_yield': The dividend yield.\n            - 'eps': The trailing earnings per share.\n            - 'beta': The beta value of the stock.\n            - '52_week_high': The 52-week high price of the stock.\n            - '52_week_low': The 52-week low price of the stock.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "symbol"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_financial_statements",
+            "description": "get_financial_statements(symbol: str) -> dict - Get financial statements for a given stock symbol.\n\nArgs:\nsymbol (str): The stock symbol.\n\nReturns:\ndict: Dictionary containing financial statements (income statement, balance sheet, cash flow statement).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "symbol"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_key_financial_ratios",
+            "description": "get_key_financial_ratios(symbol: str) -> dict - Get key financial ratios for a given stock symbol.\n\nArgs:\nsymbol (str): The stock symbol.\n\nReturns:\ndict: Dictionary containing key financial ratios.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "symbol"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_analyst_recommendations",
+            "description": "get_analyst_recommendations(symbol: str) -> pandas.core.frame.DataFrame - Get analyst recommendations for a given stock symbol.\n\nArgs:\nsymbol (str): The stock symbol.\n\nReturns:\npd.DataFrame: DataFrame containing analyst recommendations.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "symbol"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_dividend_data",
+            "description": "get_dividend_data(symbol: str) -> pandas.core.frame.DataFrame - Get dividend data for a given stock symbol.\n\nArgs:\nsymbol (str): The stock symbol.\n\nReturns:\npd.DataFrame: DataFrame containing dividend data.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "symbol"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_company_news",
+            "description": "get_company_news(symbol: str) -> pandas.core.frame.DataFrame - Get company news and press releases for a given stock symbol.\nThis function returns titles and url which need further scraping using other tools.\n\nArgs:\nsymbol (str): The stock symbol.\n\nReturns:\npd.DataFrame: DataFrame containing company news and press releases.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "symbol"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_technical_indicators",
+            "description": "get_technical_indicators(symbol: str) -> pandas.core.frame.DataFrame - Get technical indicators for a given stock symbol.\n\nArgs:\nsymbol (str): The stock symbol.\n\nReturns:\npd.DataFrame: DataFrame containing technical indicators.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "symbol"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_company_profile",
+            "description": "get_company_profile(symbol: str) -> dict - Get company profile and overview for a given stock symbol.\n\nArgs:\nsymbol (str): The stock symbol.\n\nReturns:\ndict: Dictionary containing company profile and overview.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "symbol"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_10q",
+            "description": "search_10q(data) - Useful to search information from the latest 10-Q form for a\n    given stock.\n    The input to this tool should be a pipe (|) separated text of\n    length two, representing the stock ticker you are interested and what\n    question you have from it.\n\t\tFor example, `AAPL|what was last quarter's revenue`.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "data": {}
+                },
+                "required": [
+                    "data"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_10k",
+            "description": "search_10k(data) - Useful to search information from the latest 10-K form for a\ngiven stock.\nThe input to this tool should be a pipe (|) separated text of\nlength two, representing the stock ticker you are interested, what\nquestion you have from it.\nFor example, `AAPL|what was last year's revenue`.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "data": {}
+                },
+                "required": [
+                    "data"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_historical_price",
+            "description": "get_historical_price(symbol, start_date, end_date) - Fetches historical stock prices for a given symbol from 'start_date' to 'end_date'.\n- symbol (str): Stock ticker symbol.\n- end_date (date): Typically today unless a specific end date is provided. End date MUST be greater than start date\n- start_date (date): Set explicitly, or calculated as 'end_date - date interval' (for example, if prompted 'over the past 6 months', date interval = 6 months so start_date would be 6 months earlier than today's date). Default to '1900-01-01' if vaguely asked for historical price. Start date must always be before the current date",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {},
+                    "start_date": {},
+                    "end_date": {}
+                },
+                "required": [
+                    "symbol",
+                    "start_date",
+                    "end_date"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "plot_price_over_time",
+            "description": "plot_price_over_time(symbol, start_date, end_date) - Plots the historical stock prices for a given symbol over a specified date range.\n- symbol (str): Stock ticker symbol.\n- start_date (str): Start date for the historical data in 'YYYY-MM-DD' format.\n- end_date (str): End date for the historical data in 'YYYY-MM-DD' format.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {},
+                    "start_date": {},
+                    "end_date": {}
+                },
+                "required": [
+                    "symbol",
+                    "start_date",
+                    "end_date"
+                ]
+            }
+        }
+    }
+]
