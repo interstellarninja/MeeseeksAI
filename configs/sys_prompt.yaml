@@ -14,11 +14,6 @@ Tools: |
   <tools>
   {tools}
   </tools>
-Examples: |
-  Here's an example of agent metadata json and mermaid graph:
-  <example>
-  {examples}
-  </example>
 Schema: |
   When specifying each agent's metadata in the graph, follow this JSON schema:
   <agent_schema>
@@ -27,4 +22,3 @@ Schema: |
 Instructions: |
   Return the final agent metadata JSON list inside <agents> tags.
   And return the final Mermaid graph code inside <graph> tags.
-  Do not use markdown blocks such as ```json or ```mermaid but use XML tags.
