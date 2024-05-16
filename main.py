@@ -67,10 +67,10 @@ class AgentOrchestrator:
             agent_data = G.nodes[agent_role]
             agent = Agent(**agent_data)
 
+            st.write(f"Starting Agent:<font color='white'> {agent.role}</font>", unsafe_allow_html=True)
             if agent.verbose:
-                st.write(f"Starting Agent: <font color='white'>{agent.role}</font>", unsafe_allow_html=True)
-                st.write(f"<font color='purple'>Agent Persona: {agent.persona}</font>", unsafe_allow_html=True)
-                st.write(f"<font color='orange'>Agent Goal: {agent.goal}</font>", unsafe_allow_html=True)
+                st.write(f"Agent Persona:<font color='purple'> {agent.persona}</font>", unsafe_allow_html=True)
+                st.write(f"Agent Goal:<font color='orange'> {agent.goal}</font>", unsafe_allow_html=True)
 
             # Prepare the input messages for the agent
             input_messages = []
@@ -84,7 +84,7 @@ class AgentOrchestrator:
             output = agent.execute()
 
             if agent.verbose:
-                st.write(f"<font color='green'>Agent Output:\n{output}\n</font>", unsafe_allow_html=True)
+                st.write(f"Agent Output:<font color='green'>\n{output}\n</font>", unsafe_allow_html=True)
 
             agent_outputs[agent_role] = output
             self.llama_logs.extend(agent.interactions)
@@ -130,7 +130,7 @@ class AgentOrchestrator:
     def agent_dispatcher(self, query, agents, tools, resources):
         chat = [{"role": "user", "content": query}]
         prompter = PromptManager()
-        sys_prompt = prompter.generate_prompt(tools, agents, resources)
+        sys_prompt = prompter.generate_prompt(tools, agents, resources, one_shot=True)
 
         #response = CLIENTS.chat_completion(
         #    client="anthropic",
@@ -199,8 +199,8 @@ def mainflow():
     st.markdown(multiline_text, unsafe_allow_html=True)
 
     # Add customization options to the sidebar
-    st.sidebar.title('Customization')
-    additional_context = st.sidebar.text_input('Enter additional summarization context for the LLM here (i.e. write it in spanish):')
+    #st.sidebar.title('Customization')
+    #additional_context = st.sidebar.text_input('Enter additional summarization context for the LLM here (i.e. write it in spanish):')
 
     # Get the user's question
     user_question = st.text_input("Ask a question about a stock or multiple stocks:")
