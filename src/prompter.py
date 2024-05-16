@@ -15,7 +15,7 @@ class PromptSchema(BaseModel):
     Agents: str
     Tools: str
     #Resources: str
-    Examples: str
+    #Examples: str
     Schema: str
     Instructions: str 
 
@@ -46,21 +46,15 @@ class PromptManager:
             Agents=yaml_content.get('Agents', ''),
             Tools=yaml_content.get('Tools', ''),
             #Resources=yaml_content.get('Resources', ''),
-            Examples=yaml_content.get('Examples', ''),
+            #Examples=yaml_content.get('Examples', ''),
             Schema=yaml_content.get('Schema', ''),
             Instructions=yaml_content.get('Instructions', ''),
         )
         return prompt_schema
     
-    def generate_prompt(self, tools, agents, resources, num_fewshot=None):
+    def generate_prompt(self, tools, agents, resources, one_shot=False):
         prompt_path = os.path.join(self.script_dir, '../configs', 'sys_prompt.yaml')
         prompt_schema = self.read_yaml_file(prompt_path)
-
-        if num_fewshot is not None:
-            examples = get_fewshot_examples(num_fewshot)
-        else:
-            with open(os.path.join(self.script_dir, '../configs', 'example.txt'), 'r') as file:
-                examples = file.read()
 
         schema_json = json.loads(Agent.schema_json())
         #schema = schema_json.get("properties", {})
@@ -70,13 +64,24 @@ class PromptManager:
             "agents": agents,
             "tools": tools,
             "resources": None,
-            "examples": examples,
+            #"examples": examples,
             "schema": schema_json
         }
         sys_prompt = self.format_yaml_prompt(prompt_schema, variables)
-        print(sys_prompt)
-        #prompt = [
-        #        {'content': sys_prompt, 'role': 'system'}
-        #    ]
-        #prompt.extend(user_prompt)
+        #print(sys_prompt)
+
+        prompt = [
+                {'role': 'system', 'content': sys_prompt}
+            ]
+
+        if one_shot:
+            #examples = get_fewshot_examples(num_fewshot)
+            with open(os.path.join(self.script_dir, '../configs', 'example.txt'), 'r') as file:
+                examples = file.read()
+
+            prompt.extend([
+                {"role": "user", "content": "Perform fundamental analysis of NVDA stock and provide portfolio recommendations"},
+                {"role": "assistant", "content": examples}
+            ])
+        print(prompt)
         return sys_prompt
