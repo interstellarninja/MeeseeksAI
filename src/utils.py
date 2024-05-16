@@ -62,8 +62,15 @@ def validate_and_extract_tool_calls(assistant_content):
     validation_result = False
     tool_calls = []
     error_message = None
+    scratchpad_text = None
 
     try:
+        # Use regular expression to find the text within <scratchpad> tags
+        scratchpad_pattern = r'<scratchpad>(.*?)</scratchpad>'
+        scratchpad_match = re.search(scratchpad_pattern, assistant_content, re.DOTALL)
+        if scratchpad_match:
+            scratchpad_text = scratchpad_match.group(1).strip()
+
         # Use regular expression to find all <tool_call> tags and their contents
         tool_call_pattern = r'<tool_call>(.*?)</tool_call>'
         tool_call_matches = re.findall(tool_call_pattern, assistant_content, re.DOTALL)
@@ -89,7 +96,7 @@ def validate_and_extract_tool_calls(assistant_content):
         error_message = f"Error during tool call extraction: {err}"
         inference_logger.error(error_message)
 
-    return validation_result, tool_calls, error_message
+    return validation_result, tool_calls, scratchpad_text, error_message
 
 def extract_json_from_markdown(text):
     """
