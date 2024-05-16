@@ -26,10 +26,10 @@ class Agent(BaseModel):
     goal: str
     tools: List[str] = []
     dependencies: Optional[List[str]] = None
-    user_feedback: bool = True
-    verbose: bool = False
+    user_feedback: bool = False
+    verbose: bool = True
     model: str = Field(default_factory=lambda: os.getenv('AGENT_MODEL'))  # agent model from environment variable
-    max_iter: int = 2
+    max_iter: int = 5
     client: str = Field(default_factory=lambda: os.getenv('AGENT_CLIENT')) 
     tool_objects: Dict[str, Any] = {}
     input_messages: List[Dict] = []
@@ -81,7 +81,7 @@ class Agent(BaseModel):
             system_prompt += """
 Please use <scratchpad> XML tags to record your reasoning and planning before you call the functions as follows:
 <scratchpad>
-{step-by-step reasoning}
+{step-by-step reasoning and plan in bullet points}
 </scratchpad>
 For each function call return a json object with function name and arguments within <tool_call> XML tags as follows:
 <tool_call>
@@ -112,14 +112,16 @@ For each function call return a json object with function name and arguments wit
 
             # Process the agent's response and extract tool calls
             if self.tool_objects:
-                validation, tool_calls, error_message = validate_and_extract_tool_calls(result)
+                validation, tool_calls, scratchpad, error_message = validate_and_extract_tool_calls(result)
 
                 if validation and tool_calls:
                     inference_logger.info(f"Parsed tool calls:\n{json.dumps(tool_calls, indent=2)}")
                     
                     # Print parsed tool calls as JSON markdown in Streamlit
-                    st.markdown(f"**Parsed Tool Calls:**")
-                    st.json(tool_calls)
+                    if self.verbose:
+                        st.write(f"Agent Plan:<font color='green'>\n{scratchpad}\n</font>", unsafe_allow_html=True)
+                        st.markdown(f"**Parsed Tool Calls:**")
+                        st.json(tool_calls)
 
                     # Execute the tool calls
                     tool_message = f"Sub-agent iteration {depth} to assist with user query: {self.goal}. Summarize the tool results:\n"

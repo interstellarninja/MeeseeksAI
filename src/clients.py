@@ -4,7 +4,7 @@ from anthropic import Anthropic
 from groq import Groq
 from dotenv import load_dotenv
 
-load_dotenv(".env")
+load_dotenv(".env", override=True)
 
 class Clients:
     def __init__(self):
