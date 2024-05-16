@@ -1,3 +1,11 @@
+<scratchpad>
+To fulfill this query, we will need to:
+1. Gather financial statements and key financial ratios for NVDA using the Financial Analyst agent
+2. Gather news, company announcements, and market sentiments related to NVDA using the Research Analyst agent 
+3. Have the Investment Advisor agent analyze the data collected by the Financial Analyst and Research Analyst to formulate investment recommendations
+4. Have the Summarizer agent compile a final summary report with the analysis and recommendations
+The Financial Analyst and Research Analyst can work in parallel to gather data. Once they are done, the Investment Advisor will analyze the data. Finally, the Summarizer will generate the report.
+</scratchpad>
 <agents>
 [
   {
